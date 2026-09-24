@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "647152022815",
+    "project_id": "biteflight-delivery",
+    "storage_bucket": "biteflight-delivery.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647152022815:android:984fc01eac52945ba02c2a",
+        "android_client_info": {
+          "package_name": "com.example.biteflight"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmDPLdkP1E-vbyRcwUH0EkS7fLJSaI_wc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

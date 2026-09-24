@@ -1,0 +1,17 @@
+# Exclude build and generated outputs
+build/
+.gradle/
+**/generated/
+**/*Generated.kt
+**/*Generated.java
+
+# Exclude large data and assets
+**/raw/
+**/*.csv
+**/*.json
+**/*.sqlite
+
+# Exclude sensitive keys
+local.properties
+*.env
+**/*.jks

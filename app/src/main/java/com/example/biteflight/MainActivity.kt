@@ -2,14 +2,18 @@ package com.example.biteflight
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.biteflight.data.model.User
 import com.example.biteflight.databinding.ActivityMainBinding
+import com.example.biteflight.databinding.DialogEditProfileBinding
 import com.example.biteflight.ui.auth.AuthViewModel
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.utils.Resource
@@ -18,6 +22,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: AuthViewModel by viewModels()
+    private var currentUserProfile: User? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +32,13 @@ class MainActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val dp24 = (24 * resources.displayMetrics.density).toInt()
+            v.setPadding(
+                dp24,
+                dp24 + systemBars.top,
+                dp24,
+                dp24 + systemBars.bottom
+            )
             insets
         }
 
@@ -46,10 +57,46 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        binding.btnEditProfile.setOnClickListener {
+            showEditProfileDialog()
+        }
+
         binding.btnSignOut.setOnClickListener {
             viewModel.logout()
             navigateToLogin()
         }
+    }
+
+    private fun showEditProfileDialog() {
+        val profile = currentUserProfile ?: return
+        val dialogBinding = DialogEditProfileBinding.inflate(LayoutInflater.from(this))
+
+        dialogBinding.etEditName.setText(profile.name)
+        dialogBinding.etEditPhone.setText(profile.phone)
+        dialogBinding.etEditAddress.setText(profile.address)
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Profile")
+            .setView(dialogBinding.root)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = dialogBinding.etEditName.text.toString().trim()
+                val newPhone = dialogBinding.etEditPhone.text.toString().trim()
+                val newAddress = dialogBinding.etEditAddress.text.toString().trim()
+
+                if (newName.isEmpty() || newPhone.isEmpty() || newAddress.isEmpty()) {
+                    Toast.makeText(this, "Fields cannot be empty", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                val updatedUser = profile.copy(
+                    name = newName,
+                    phone = newPhone,
+                    address = newAddress
+                )
+                viewModel.updateProfile(updatedUser)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun observeViewModel() {
@@ -61,11 +108,31 @@ class MainActivity : AppCompatActivity() {
                 is Resource.Success -> {
                     binding.progressBar.visibility = View.GONE
                     val profile = resource.data
+                    currentUserProfile = profile
                     binding.tvName.text = profile.name
                     binding.tvRole.text = "Role: ${profile.role}"
                     binding.tvEmail.text = "Email: ${profile.email}"
                     binding.tvPhone.text = "Phone: ${profile.phone}"
                     binding.tvAddress.text = "Address: ${profile.address}"
+                }
+                is Resource.Error -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(this, resource.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        viewModel.updateProfileState.observe(this) { resource ->
+            when (resource) {
+                is Resource.Loading -> {
+                    binding.progressBar.visibility = View.VISIBLE
+                }
+                is Resource.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(this, "Profile updated successfully!", Toast.LENGTH_SHORT).show()
+                    viewModel.currentUser?.uid?.let { uid ->
+                        viewModel.fetchProfile(uid)
+                    }
                 }
                 is Resource.Error -> {
                     binding.progressBar.visibility = View.GONE

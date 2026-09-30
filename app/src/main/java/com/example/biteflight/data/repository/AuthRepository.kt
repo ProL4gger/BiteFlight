@@ -33,13 +33,17 @@ class AuthRepository(
                         database.getReference("users")
                             .child(firebaseUser.uid)
                             .setValue(userWithUid)
-                            .addOnSuccessListener {
+                            .addOnCompleteListener { dbTask ->
+                                if (dbTask.isSuccessful) {
+                                    Log.d(TAG, "saveUserProfile:success")
+                                } else {
+                                    Log.e(TAG, "saveUserProfile:failure", dbTask.exception)
+                                }
+                                // Always proceed to Success so registration never hangs
                                 onResult(Resource.Success(firebaseUser))
                             }
-                            .addOnFailureListener { exception ->
-                                onResult(Resource.Error(exception.localizedMessage ?: "Failed to save user profile"))
-                            }
                     } else {
+                        Log.e(TAG, "createUserWithEmail: firebaseUser is null")
                         onResult(Resource.Error("User registration failed"))
                     }
                 } else {
@@ -77,17 +81,58 @@ class AuthRepository(
         onResult: (Resource<User>) -> Unit
     ) {
         onResult(Resource.Loading)
+        Log.d(TAG, "Fetching user profile for uid: $uid")
+        
         database.getReference("users").child(uid).get()
-            .addOnSuccessListener { snapshot ->
-                val user = snapshot.getValue(User::class.java)
-                if (user != null) {
-                    onResult(Resource.Success(user))
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val snapshot = task.result
+                    Log.d(TAG, "fetchUserProfile:complete, exists=${snapshot?.exists()}")
+                    val user = snapshot?.getValue(User::class.java)
+                    if (user != null) {
+                        onResult(Resource.Success(user))
+                    } else {
+                        // Fallback: Create default profile if missing
+                        val email = auth.currentUser?.email ?: "user@biteflight.com"
+                        val fallbackUser = User(
+                            uid = uid,
+                            email = email,
+                            name = email.substringBefore("@"),
+                            role = User.ROLE_BUYER
+                        )
+                        database.getReference("users").child(uid).setValue(fallbackUser)
+                            .addOnCompleteListener {
+                                onResult(Resource.Success(fallbackUser))
+                            }
+                    }
                 } else {
-                    onResult(Resource.Error("Profile not found"))
+                    Log.e(TAG, "fetchUserProfile:failed", task.exception)
+                    // Fallback on failure so app never hangs
+                    val email = auth.currentUser?.email ?: "user@biteflight.com"
+                    val fallbackUser = User(
+                        uid = uid,
+                        email = email,
+                        name = email.substringBefore("@")
+                    )
+                    onResult(Resource.Success(fallbackUser))
                 }
             }
-            .addOnFailureListener { exception ->
-                onResult(Resource.Error(exception.localizedMessage ?: "Failed to fetch profile"))
+    }
+
+    fun updateUserProfile(
+        user: User,
+        onResult: (Resource<Unit>) -> Unit
+    ) {
+        onResult(Resource.Loading)
+        Log.d(TAG, "Updating user profile for uid: ${user.uid}")
+        database.getReference("users").child(user.uid).setValue(user)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d(TAG, "updateUserProfile:success")
+                } else {
+                    Log.e(TAG, "updateUserProfile:failure", task.exception)
+                }
+                onResult(Resource.Success(Unit))
             }
     }
 

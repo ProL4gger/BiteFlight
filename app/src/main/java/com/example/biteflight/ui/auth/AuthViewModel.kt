@@ -21,6 +21,9 @@ class AuthViewModel(
     private val _userProfileState = MutableLiveData<Resource<User>>()
     val userProfileState: LiveData<Resource<User>> = _userProfileState
 
+    private val _updateProfileState = MutableLiveData<Resource<Unit>>()
+    val updateProfileState: LiveData<Resource<Unit>> = _updateProfileState
+
     val currentUser: FirebaseUser? get() = repository.currentUser
 
     fun signUp(user: User, password: String) {
@@ -38,6 +41,12 @@ class AuthViewModel(
     fun fetchProfile(uid: String) {
         repository.fetchUserProfile(uid) { result ->
             _userProfileState.postValue(result)
+        }
+    }
+
+    fun updateProfile(user: User) {
+        repository.updateUserProfile(user) { result ->
+            _updateProfileState.postValue(result)
         }
     }
 

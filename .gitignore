@@ -16,4 +16,4 @@ local.properties
 /.claude
 /agent/skills
 /.agents/skills
-"Tutorial 1.pptx"
+*.pptx

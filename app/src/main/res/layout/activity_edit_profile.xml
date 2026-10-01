@@ -6,9 +6,10 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:background="@color/background"
-    tools:context=".ui.auth.LoginActivity">
+    tools:context=".ui.profile.EditProfileActivity">
 
     <LinearLayout
+        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -17,30 +18,29 @@
 
         <!-- Logo Header -->
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:contentDescription="BiteFlight Logo"
             android:src="@drawable/ic_logo"
-            android:layout_marginBottom="12dp" />
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="BiteFlight"
             android:textColor="@color/primary"
-            android:textSize="32sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.02" />
+            android:textSize="28sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Fast &amp; Fresh Food Delivery"
+            android:text="Update your profile information"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="24dp" />
 
-        <!-- Login Card -->
+        <!-- Edit Profile Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -59,7 +59,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Welcome Back"
+                    android:text="Edit Profile"
                     android:textColor="@color/text_primary"
                     android:textSize="22sp"
                     android:textStyle="bold"
@@ -68,55 +68,72 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sign in to your account"
+                    android:text="Make changes to your details in real-time"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp"
                     android:layout_marginBottom="24dp" />
 
-                <!-- Email Input -->
+                <!-- Name Input -->
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilEmail"
+                    android:id="@+id/tilEditName"
                     style="@style/Widget.BiteFlight.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:startIconDrawable="@drawable/ic_email"
-                    android:hint="Email Address">
+                    app:startIconDrawable="@drawable/ic_person"
+                    android:hint="Full / Business Name">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etEmail"
+                        android:id="@+id/etEditName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
-                        android:inputType="textEmailAddress" />
+                        android:inputType="textPersonName" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Password Input -->
+                <!-- Phone Input -->
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilPassword"
+                    android:id="@+id/tilEditPhone"
+                    style="@style/Widget.BiteFlight.TextInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:startIconDrawable="@drawable/ic_phone"
+                    android:hint="Phone Number">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etEditPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:inputType="phone" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Address Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilEditAddress"
                     style="@style/Widget.BiteFlight.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="24dp"
-                    app:startIconDrawable="@drawable/ic_lock"
-                    app:passwordToggleEnabled="true"
-                    android:hint="Password">
+                    app:startIconDrawable="@drawable/ic_location"
+                    android:hint="Delivery or Store Address">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etPassword"
+                        android:id="@+id/etEditAddress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/text_primary"
-                        android:inputType="textPassword" />
+                        android:inputType="textPostalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Log In Button -->
+                <!-- Save Button -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnLogin"
+                    android:id="@+id/btnSaveProfile"
                     style="@style/Widget.BiteFlight.Button"
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
-                    android:text="Log In" />
+                    android:text="Save Changes" />
 
                 <ProgressBar
                     android:id="@+id/progressBar"
@@ -128,32 +145,6 @@
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- Footer Link -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="24dp"
-            android:gravity="center">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Don't have an account? "
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/tvSignUpLink"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sign Up"
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:padding="4dp" />
-        </LinearLayout>
 
     </LinearLayout>
 </ScrollView>

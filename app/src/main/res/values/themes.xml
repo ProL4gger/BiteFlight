@@ -28,6 +28,7 @@
         <item name="boxStrokeColor">@color/primary</item>
         <item name="hintTextColor">@color/text_secondary</item>
         <item name="startIconTint">@color/text_secondary</item>
+        <item name="passwordToggleTint">@color/text_secondary</item>
     </style>
 
     <!-- Custom Primary Button -->

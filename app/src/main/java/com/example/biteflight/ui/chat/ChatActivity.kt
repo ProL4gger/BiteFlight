@@ -33,6 +33,10 @@ class ChatActivity : AppCompatActivity() {
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
         binding.rvMessages.adapter = adapter
 
+
+
+
+
         binding.btnSend.setOnClickListener {
             viewModel.send(binding.etMessage.text.toString())
             binding.etMessage.text.clear()

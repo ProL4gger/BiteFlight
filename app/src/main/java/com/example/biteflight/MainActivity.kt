@@ -15,7 +15,7 @@ import com.example.biteflight.ui.auth.AuthViewModel
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.ui.profile.EditProfileActivity
 import com.example.biteflight.utils.Resource
-
+import com.example.biteflight.ui.chat.ChatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -61,6 +61,10 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         binding.btnEditProfile.setOnClickListener {
             startActivity(Intent(this, EditProfileActivity::class.java))
+        }
+
+        binding.btnAssistant.setOnClickListener {
+            startActivity(Intent(this, ChatActivity::class.java))
         }
 
         binding.btnSignOut.setOnClickListener {

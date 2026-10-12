@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.biteflight" />
-                  <option name="mobileSdkAppId" value="1:647152022815:android:984fc01eac52945ba02c2a" />
-                  <option name="projectId" value="biteflight-delivery" />
-                  <option name="projectNumber" value="647152022815" />
+                  <option name="mobileSdkAppId" value="1:534623241494:android:14ef8ed3145da8f260fc37" />
+                  <option name="projectId" value="biteflight-e6426" />
+                  <option name="projectNumber" value="534623241494" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

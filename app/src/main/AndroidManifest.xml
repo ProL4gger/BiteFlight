@@ -22,9 +22,18 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ui.seller.EditItemActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.buyer.CartActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.auth.SignUpActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.buyer.RestaurantMenuActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="false"

@@ -1,7 +1,9 @@
 package com.example.biteflight.ui.seller
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -16,7 +18,8 @@ import com.google.firebase.database.FirebaseDatabase
 
 class SellerMenuActivity : AppCompatActivity() {
 
-    private val mealList = mutableListOf<Meal>()
+    private val mealList =
+        mutableListOf<Meal>()
 
     private lateinit var adapter: MealAdapter
 
@@ -26,16 +29,22 @@ class SellerMenuActivity : AppCompatActivity() {
         setContentView(R.layout.activity_seller_menu)
 
         // -------------------------
-        // TOP TOOLBAR
+        // TOOLBAR
         // -------------------------
 
         val toolbar =
-            findViewById<MaterialToolbar>(R.id.topToolbar)
+            findViewById<MaterialToolbar>(
+                R.id.topToolbar
+            )
 
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(
+            toolbar
+        ) { view, insets ->
 
             val statusBarInsets =
-                insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars()
+                )
 
             view.updatePadding(
                 top = statusBarInsets.top
@@ -48,9 +57,11 @@ class SellerMenuActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
 
-        supportActionBar?.title = "My Menu"
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeButtonEnabled(true)
+        supportActionBar?.title =
+            "My Menu"
+
+        supportActionBar
+            ?.setDisplayHomeAsUpEnabled(true)
 
 
         // -------------------------
@@ -58,9 +69,50 @@ class SellerMenuActivity : AppCompatActivity() {
         // -------------------------
 
         val recyclerMenu =
-            findViewById<RecyclerView>(R.id.recyclerMenu)
+            findViewById<RecyclerView>(
+                R.id.recyclerMenu
+            )
 
-        adapter = MealAdapter(mealList)
+        adapter =
+            MealAdapter(
+                mealList,
+
+                onEditClick = { meal ->
+
+                    val intent =
+                        Intent(
+                            this,
+                            EditItemActivity::class.java
+                        )
+
+                    intent.putExtra(
+                        "itemId",
+                        meal.id
+                    )
+
+                    intent.putExtra(
+                        "name",
+                        meal.name
+                    )
+
+                    intent.putExtra(
+                        "price",
+                        meal.price
+                    )
+
+                    intent.putExtra(
+                        "tags",
+                        ArrayList(meal.tags)
+                    )
+
+                    startActivity(intent)
+                },
+
+                onDeleteClick = { meal ->
+
+                    showDeleteDialog(meal)
+                }
+            )
 
         recyclerMenu.layoutManager =
             LinearLayoutManager(this)
@@ -68,23 +120,29 @@ class SellerMenuActivity : AppCompatActivity() {
         recyclerMenu.adapter =
             adapter
 
+        loadMealsFromFirebase()
+    }
 
-        // -------------------------
-        // LOAD FIREBASE ITEMS
-        // -------------------------
+
+    override fun onResume() {
+        super.onResume()
 
         loadMealsFromFirebase()
     }
+
 
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
     }
 
+
     private fun loadMealsFromFirebase() {
 
         val currentUser =
-            FirebaseAuth.getInstance().currentUser
+            FirebaseAuth
+                .getInstance()
+                .currentUser
 
         if (currentUser == null) {
 
@@ -113,7 +171,10 @@ class SellerMenuActivity : AppCompatActivity() {
 
                 mealList.clear()
 
-                for (itemSnapshot in snapshot.children) {
+                for (
+                itemSnapshot
+                in snapshot.children
+                ) {
 
                     val meal =
                         itemSnapshot.getValue(
@@ -132,6 +193,57 @@ class SellerMenuActivity : AppCompatActivity() {
                 Toast.makeText(
                     this,
                     "Error: ${error.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+    }
+
+
+    private fun showDeleteDialog(
+        meal: Meal
+    ) {
+
+        AlertDialog.Builder(this)
+            .setTitle("Delete Item")
+            .setMessage(
+                "Are you sure you want to delete ${meal.name}?"
+            )
+            .setPositiveButton("Delete") { _, _ ->
+
+                deleteMeal(meal)
+            }
+            .setNegativeButton(
+                "Cancel",
+                null
+            )
+            .show()
+    }
+
+
+    private fun deleteMeal(
+        meal: Meal
+    ) {
+
+        FirebaseDatabase
+            .getInstance()
+            .getReference("menuItems")
+            .child(meal.id)
+            .removeValue()
+            .addOnSuccessListener {
+
+                Toast.makeText(
+                    this,
+                    "Item deleted",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                loadMealsFromFirebase()
+            }
+            .addOnFailureListener { error ->
+
+                Toast.makeText(
+                    this,
+                    "Delete failed: ${error.message}",
                     Toast.LENGTH_LONG
                 ).show()
             }

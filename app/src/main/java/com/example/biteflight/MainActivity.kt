@@ -1,100 +1,230 @@
 package com.example.biteflight
-
+import android.widget.ImageButton
+import com.example.biteflight.ui.buyer.CartActivity
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.data.model.User
-import com.example.biteflight.databinding.ActivityMainBinding
-import com.example.biteflight.ui.auth.AuthViewModel
 import com.example.biteflight.ui.auth.LoginActivity
+import com.example.biteflight.ui.buyer.RestaurantAdapter
+import com.example.biteflight.ui.buyer.RestaurantMenuActivity
 import com.example.biteflight.ui.profile.EditProfileActivity
-import com.example.biteflight.utils.Resource
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private val viewModel: AuthViewModel by viewModels()
-    private var currentUserProfile: User? = null
+
+    private val restaurantList =
+        mutableListOf<User>()
+
+    private lateinit var adapter: RestaurantAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val dp24 = (24 * resources.displayMetrics.density).toInt()
-            v.setPadding(
-                dp24,
-                dp24 + systemBars.top,
-                dp24,
-                dp24 + systemBars.bottom
+        setContentView(R.layout.activity_main)
+
+        // -------------------------
+        // SETTINGS BUTTON
+        // -------------------------
+        val btnCart =
+            findViewById<ImageButton>(
+                R.id.btnCart
             )
-            insets
+
+        btnCart.setOnClickListener {
+
+            startActivity(
+                Intent(
+                    this,
+                    CartActivity::class.java
+                )
+            )
         }
 
-        setupListeners()
-        observeViewModel()
-    }
+        val btnSettings =
+            findViewById<ImageButton>(R.id.btnSettings)
 
-    override fun onResume() {
-        super.onResume()
-        loadUserProfile()
-    }
+        btnSettings.setOnClickListener { view ->
 
-    private fun loadUserProfile() {
-        val user = viewModel.currentUser
-        if (user == null) {
-            navigateToLogin()
-            return
-        }
-        viewModel.fetchProfile(user.uid)
-    }
+            val popupMenu =
+                PopupMenu(this, view)
 
-    private fun setupListeners() {
-        binding.btnEditProfile.setOnClickListener {
-            startActivity(Intent(this, EditProfileActivity::class.java))
-        }
+            popupMenu.menu.add("My Orders")
+            popupMenu.menu.add("Edit Profile")
+            popupMenu.menu.add("Contact Us")
+            popupMenu.menu.add("Support")
+            popupMenu.menu.add("Log Out")
 
-        binding.btnSignOut.setOnClickListener {
-            viewModel.logout()
-            navigateToLogin()
-        }
-    }
+            popupMenu.setOnMenuItemClickListener { item ->
 
-    private fun observeViewModel() {
-        viewModel.userProfileState.observe(this) { resource ->
-            when (resource) {
-                is Resource.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
+                when (item.title.toString()) {
+
+                    "My Orders" -> {
+
+                        Toast.makeText(
+                            this,
+                            "My Orders",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        // Later we will open:
+                        // MyOrdersActivity
+                    }
+
+                    "Edit Profile" -> {
+
+                        val intent =
+                            Intent(
+                                this,
+                                EditProfileActivity::class.java
+                            )
+
+                        startActivity(intent)
+                    }
+
+
+                    "Contact Us" -> {
+
+                        Toast.makeText(
+                            this,
+                            "Contact Us",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    "Support" -> {
+
+                        Toast.makeText(
+                            this,
+                            "Support",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    "Log Out" -> {
+
+                        FirebaseAuth.getInstance().signOut()
+
+                        val intent =
+                            Intent(
+                                this,
+                                LoginActivity::class.java
+                            )
+
+                        intent.flags =
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+                        startActivity(intent)
+                    }
                 }
-                is Resource.Success -> {
-                    binding.progressBar.visibility = View.GONE
-                    val profile = resource.data
-                    currentUserProfile = profile
-                    binding.tvName.text = profile.name
-                    binding.tvRole.text = "Role: ${profile.role}"
-                    binding.tvEmail.text = "Email: ${profile.email}"
-                    binding.tvPhone.text = "Phone: ${profile.phone}"
-                    binding.tvAddress.text = "Address: ${profile.address}"
-                }
-                is Resource.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    Toast.makeText(this, resource.message, Toast.LENGTH_SHORT).show()
-                }
+
+                true
             }
+
+            popupMenu.show()
         }
+
+
+        // -------------------------
+        // RESTAURANT LIST
+        // -------------------------
+
+        val recyclerRestaurants =
+            findViewById<RecyclerView>(
+                R.id.recyclerRestaurants
+            )
+
+        adapter =
+            RestaurantAdapter(
+                restaurantList
+            ) { restaurant ->
+
+                val intent =
+                    Intent(
+                        this,
+                        RestaurantMenuActivity::class.java
+                    )
+
+                intent.putExtra(
+                    "sellerId",
+                    restaurant.uid
+                )
+
+                intent.putExtra(
+                    "restaurantName",
+                    restaurant.name
+                )
+
+                startActivity(intent)
+            }
+
+        recyclerRestaurants.layoutManager =
+            LinearLayoutManager(this)
+
+        recyclerRestaurants.adapter =
+            adapter
+
+        loadRestaurants()
     }
 
-    private fun navigateToLogin() {
-        startActivity(Intent(this, LoginActivity::class.java))
-        finish()
+
+    // -------------------------
+    // LOAD SELLERS
+    // -------------------------
+
+    private fun loadRestaurants() {
+
+        val database =
+            FirebaseDatabase
+                .getInstance()
+                .getReference("users")
+
+        database
+            .get()
+            .addOnSuccessListener { snapshot ->
+
+                restaurantList.clear()
+
+                for (userSnapshot in snapshot.children) {
+
+                    val user =
+                        userSnapshot.getValue(
+                            User::class.java
+                        )
+
+                    if (
+                        user != null &&
+                        user.role.uppercase() == "SELLER"
+                    ) {
+
+                        val restaurantWithId =
+                            user.copy(
+                                uid =
+                                    userSnapshot.key ?: ""
+                            )
+
+                        restaurantList.add(
+                            restaurantWithId
+                        )
+                    }
+                }
+
+                adapter.notifyDataSetChanged()
+            }
+            .addOnFailureListener { error ->
+
+                Toast.makeText(
+                    this,
+                    "Error: ${error.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
     }
 }

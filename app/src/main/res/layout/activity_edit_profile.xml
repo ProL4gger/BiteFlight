@@ -16,7 +16,6 @@
         android:orientation="vertical"
         android:padding="24dp">
         <include
-            android:id="@+id/topBar"
             layout="@layout/view_top_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>

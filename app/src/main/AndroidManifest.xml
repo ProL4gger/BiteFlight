@@ -28,6 +28,17 @@
             android:name=".ui.buyer.CartActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.buyer.CheckoutActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.buyer.BuyerOrdersActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.seller.SellerOrdersActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.auth.SignUpActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

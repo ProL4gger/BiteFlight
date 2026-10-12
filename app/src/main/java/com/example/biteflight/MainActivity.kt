@@ -15,6 +15,7 @@ import com.example.biteflight.ui.buyer.RestaurantMenuActivity
 import com.example.biteflight.ui.profile.EditProfileActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.example.biteflight.ui.buyer.BuyerOrdersActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,14 +68,12 @@ class MainActivity : AppCompatActivity() {
 
                     "My Orders" -> {
 
-                        Toast.makeText(
-                            this,
-                            "My Orders",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        // Later we will open:
-                        // MyOrdersActivity
+                        startActivity(
+                            Intent(
+                                this,
+                                BuyerOrdersActivity::class.java
+                            )
+                        )
                     }
 
                     "Edit Profile" -> {

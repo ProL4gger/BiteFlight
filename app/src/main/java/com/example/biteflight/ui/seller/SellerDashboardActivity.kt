@@ -83,19 +83,12 @@ class SellerDashboardActivity : AppCompatActivity() {
 
                     "My Orders" -> {
 
-                        Toast.makeText(
-                            this,
-                            "My Orders",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-                        // Later:
-                        // startActivity(
-                        //     Intent(
-                        //         this,
-                        //         SellerOrdersActivity::class.java
-                        //     )
-                        // )
+                        startActivity(
+                            Intent(
+                                this,
+                                SellerOrdersActivity::class.java
+                            )
+                        )
                     }
 
 

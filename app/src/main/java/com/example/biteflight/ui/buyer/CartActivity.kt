@@ -21,7 +21,7 @@ class CartActivity : AppCompatActivity() {
     private lateinit var tvEmptyCart: TextView
     private lateinit var tvCartRestaurant: TextView
 
-    private lateinit var btnConfirmQuantity: Button
+    private lateinit var btnCheckout: Button
     private lateinit var btnReturnToMenu: Button
     private lateinit var btnClearCart: Button
 
@@ -41,11 +41,8 @@ class CartActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
 
-        supportActionBar?.title =
-            "Your Cart"
-
-        supportActionBar
-            ?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Your Cart"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
 
         // -------------------------
@@ -58,38 +55,26 @@ class CartActivity : AppCompatActivity() {
             )
 
         tvTotal =
-            findViewById(
-                R.id.tvTotal
-            )
+            findViewById(R.id.tvTotal)
 
         tvEmptyCart =
-            findViewById(
-                R.id.tvEmptyCart
-            )
+            findViewById(R.id.tvEmptyCart)
 
         tvCartRestaurant =
-            findViewById(
-                R.id.tvCartRestaurant
-            )
+            findViewById(R.id.tvCartRestaurant)
 
-        btnConfirmQuantity =
-            findViewById(
-                R.id.btnConfirmQuantity
-            )
+        btnCheckout =
+            findViewById(R.id.btnCheckout)
 
         btnReturnToMenu =
-            findViewById(
-                R.id.btnReturnToMenu
-            )
+            findViewById(R.id.btnReturnToMenu)
 
         btnClearCart =
-            findViewById(
-                R.id.btnClearCart
-            )
+            findViewById(R.id.btnClearCart)
 
 
         // -------------------------
-        // CART ADAPTER
+        // ADAPTER
         // -------------------------
 
         adapter =
@@ -98,22 +83,16 @@ class CartActivity : AppCompatActivity() {
 
                 onPlus = { position ->
 
-                    CartManager.increaseQuantity(
-                        position
-                    )
+                    CartManager.increaseQuantity(position)
 
-                    adapter.notifyItemChanged(
-                        position
-                    )
+                    adapter.notifyItemChanged(position)
 
                     updateCartInfo()
                 },
 
                 onMinus = { position ->
 
-                    CartManager.decreaseQuantity(
-                        position
-                    )
+                    CartManager.decreaseQuantity(position)
 
                     adapter.notifyDataSetChanged()
 
@@ -122,9 +101,7 @@ class CartActivity : AppCompatActivity() {
 
                 onRemove = { position ->
 
-                    CartManager.removeItem(
-                        position
-                    )
+                    CartManager.removeItem(position)
 
                     adapter.notifyDataSetChanged()
 
@@ -140,87 +117,72 @@ class CartActivity : AppCompatActivity() {
 
 
         // -------------------------
-        // CONFIRM QUANTITY
+        // CHECKOUT
         // -------------------------
 
-        btnConfirmQuantity
-            .setOnClickListener {
+        btnCheckout.setOnClickListener {
 
-                if (CartManager.isEmpty()) {
-
-                    Toast.makeText(
-                        this,
-                        "Your cart is empty",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    return@setOnClickListener
-                }
+            if (CartManager.isEmpty()) {
 
                 Toast.makeText(
                     this,
-                    "Quantity confirmed",
+                    "Your cart is empty",
                     Toast.LENGTH_SHORT
                 ).show()
+
+                return@setOnClickListener
             }
 
-
-        // -------------------------
-        // CONFIRM AND RETURN
-        // -------------------------
-
-        btnReturnToMenu
-            .setOnClickListener {
-
-                if (CartManager.isEmpty()) {
-
-                    Toast.makeText(
-                        this,
-                        "Your cart is empty",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    return@setOnClickListener
-                }
-
-                Toast.makeText(
+            startActivity(
+                Intent(
                     this,
-                    "Cart confirmed",
-                    Toast.LENGTH_SHORT
-                ).show()
+                    CheckoutActivity::class.java
+                )
+            )
+        }
 
-                returnToRestaurantMenu()
-            }
+
+        // -------------------------
+        // CONTINUE SHOPPING
+        // -------------------------
+
+        btnReturnToMenu.setOnClickListener {
+
+            returnToRestaurantMenu()
+        }
 
 
         // -------------------------
         // CLEAR CART
         // -------------------------
 
-        btnClearCart
-            .setOnClickListener {
+        btnClearCart.setOnClickListener {
 
-                CartManager.clearCart()
+            CartManager.clearCart()
 
-                adapter.notifyDataSetChanged()
+            adapter.notifyDataSetChanged()
 
-                updateCartInfo()
+            updateCartInfo()
 
-                Toast.makeText(
-                    this,
-                    "Cart cleared",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+            Toast.makeText(
+                this,
+                "Cart cleared",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 
 
         updateCartInfo()
     }
 
 
-    // -------------------------
-    // UPDATE CART UI
-    // -------------------------
+    override fun onResume() {
+        super.onResume()
+
+        adapter.notifyDataSetChanged()
+        updateCartInfo()
+    }
+
 
     private fun updateCartInfo() {
 
@@ -235,7 +197,7 @@ class CartActivity : AppCompatActivity() {
             tvTotal.text =
                 "Total: EGP 0"
 
-            btnConfirmQuantity.isEnabled =
+            btnCheckout.isEnabled =
                 false
 
             btnReturnToMenu.isEnabled =
@@ -256,7 +218,7 @@ class CartActivity : AppCompatActivity() {
             tvTotal.text =
                 "Total: EGP ${CartManager.getTotal()}"
 
-            btnConfirmQuantity.isEnabled =
+            btnCheckout.isEnabled =
                 true
 
             btnReturnToMenu.isEnabled =
@@ -267,10 +229,6 @@ class CartActivity : AppCompatActivity() {
         }
     }
 
-
-    // -------------------------
-    // RETURN TO RESTAURANT MENU
-    // -------------------------
 
     private fun returnToRestaurantMenu() {
 
@@ -284,7 +242,6 @@ class CartActivity : AppCompatActivity() {
             sellerId.isNullOrEmpty() ||
             restaurantName.isNullOrEmpty()
         ) {
-
             finish()
             return
         }
@@ -315,14 +272,8 @@ class CartActivity : AppCompatActivity() {
     }
 
 
-    // -------------------------
-    // TOOLBAR BACK
-    // -------------------------
-
     override fun onSupportNavigateUp(): Boolean {
-
         finish()
-
         return true
     }
 }

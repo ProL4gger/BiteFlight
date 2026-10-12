@@ -3,16 +3,19 @@ package com.example.biteflight.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.model.User
 import com.example.biteflight.databinding.ActivitySignUpBinding
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 import com.example.biteflight.utils.Resource
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -33,26 +36,53 @@ class SignUpActivity : AppCompatActivity() {
         auth = Firebase.auth
 
         // -------------------------
-        // BACK BUTTON
+        // TOP TOOLBAR
         // -------------------------
 
-        val btnBack = findViewById<ImageButton>(R.id.btnBack)
+        val toolbar =
+            findViewById<MaterialToolbar>(R.id.topToolbar)
 
-        btnBack.setOnClickListener {
+        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
 
-            val intent = Intent(
-                this,
-                LoginActivity::class.java
+            val statusBarInsets =
+                insets.getInsets(WindowInsetsCompat.Type.statusBars())
+
+            view.updatePadding(
+                top = statusBarInsets.top
             )
 
-            startActivity(intent)
-            finish()
+            insets
         }
+
+        ViewCompat.requestApplyInsets(toolbar)
+
+        setSupportActionBar(toolbar)
+
+        supportActionBar?.title = "Sign Up"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setHomeButtonEnabled(true)
 
         setupListeners()
         observeViewModel()
     }
 
+    // -------------------------
+    // BACK BUTTON
+    // -------------------------
+
+    override fun onSupportNavigateUp(): Boolean {
+
+        val intent =
+            Intent(
+                this,
+                LoginActivity::class.java
+            )
+
+        startActivity(intent)
+        finish()
+
+        return true
+    }
 
     private fun setupListeners() {
 
@@ -77,12 +107,10 @@ class SignUpActivity : AppCompatActivity() {
             }
         }
 
-
         // SIGN UP BUTTON
         binding.btnSignUp.setOnClickListener {
             performSignUp()
         }
-
 
         // ALREADY HAVE ACCOUNT
         binding.tvLoginLink.setOnClickListener {
@@ -97,7 +125,6 @@ class SignUpActivity : AppCompatActivity() {
             finish()
         }
     }
-
 
     private fun performSignUp() {
 
@@ -116,7 +143,6 @@ class SignUpActivity : AppCompatActivity() {
         val address =
             binding.etAddress.text.toString().trim()
 
-
         val role =
             if (binding.rbSeller.isChecked) {
 
@@ -126,7 +152,6 @@ class SignUpActivity : AppCompatActivity() {
 
                 User.ROLE_BUYER
             }
-
 
         // -------------------------
         // VALIDATION
@@ -149,7 +174,6 @@ class SignUpActivity : AppCompatActivity() {
             return
         }
 
-
         if (password.length < 6) {
 
             Toast.makeText(
@@ -161,26 +185,24 @@ class SignUpActivity : AppCompatActivity() {
             return
         }
 
-
         // -------------------------
         // CREATE USER OBJECT
         // -------------------------
 
-        val user = User(
-            name = name,
-            email = email,
-            phone = phone,
-            address = address,
-            role = role
-        )
-
+        val user =
+            User(
+                name = name,
+                email = email,
+                phone = phone,
+                address = address,
+                role = role
+            )
 
         viewModel.signUp(
             user,
             password
         )
     }
-
 
     private fun observeViewModel() {
 
@@ -197,7 +219,6 @@ class SignUpActivity : AppCompatActivity() {
                         false
                 }
 
-
                 is Resource.Success -> {
 
                     binding.progressBar.visibility =
@@ -206,45 +227,33 @@ class SignUpActivity : AppCompatActivity() {
                     binding.btnSignUp.isEnabled =
                         true
 
-
                     Toast.makeText(
                         this,
                         "Account created successfully!",
                         Toast.LENGTH_SHORT
                     ).show()
 
-
-                    // -------------------------
-                    // OPEN CORRECT PAGE
-                    // -------------------------
-
                     if (binding.rbSeller.isChecked) {
 
-                        // SELLER
-                        val intent = Intent(
-                            this,
-                            SellerDashboardActivity::class.java
+                        startActivity(
+                            Intent(
+                                this,
+                                SellerDashboardActivity::class.java
+                            )
                         )
-
-                        startActivity(intent)
 
                     } else {
 
-                        // BUYER
-                        val intent = Intent(
-                            this,
-                            MainActivity::class.java
+                        startActivity(
+                            Intent(
+                                this,
+                                MainActivity::class.java
+                            )
                         )
-
-                        startActivity(intent)
                     }
 
-
-                    // Remove signup/login pages
-                    // from the back stack
                     finishAffinity()
                 }
-
 
                 is Resource.Error -> {
 
@@ -253,7 +262,6 @@ class SignUpActivity : AppCompatActivity() {
 
                     binding.btnSignUp.isEnabled =
                         true
-
 
                     Toast.makeText(
                         this,

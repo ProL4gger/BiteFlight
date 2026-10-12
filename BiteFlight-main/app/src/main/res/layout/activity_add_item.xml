@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <!-- ScrollView must have ONLY ONE direct child -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- TOP BAR -->
+        <include
+            layout="@layout/view_top_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+
+        <!-- PAGE CONTENT -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add New Item"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="#222222"
+                android:layout_marginBottom="25dp"/>
+
+
+            <!-- MEAL NAME -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Meal Name"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
+
+            <EditText
+                android:id="@+id/etMealName"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="8dp"
+                android:hint="Example: Chicken Pizza"
+                android:inputType="textCapWords"
+                android:padding="12dp"/>
+
+
+            <!-- PRICE -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Price"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
+
+            <EditText
+                android:id="@+id/etPrice"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:layout_marginTop="8dp"
+                android:hint="Example: 150"
+                android:inputType="numberDecimal"
+                android:padding="12dp"/>
+
+
+            <!-- TAGS -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:text="Choose Tags"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
+
+
+            <CheckBox
+                android:id="@+id/checkPizza"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pizza"/>
+
+            <CheckBox
+                android:id="@+id/checkPasta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pasta"/>
+
+            <CheckBox
+                android:id="@+id/checkChicken"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chicken"/>
+
+            <CheckBox
+                android:id="@+id/checkMeat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Meat"/>
+
+            <CheckBox
+                android:id="@+id/checkDessert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dessert"/>
+
+            <CheckBox
+                android:id="@+id/checkBeverages"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Beverages"/>
+
+            <CheckBox
+                android:id="@+id/checkSandwich"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sandwich"/>
+
+
+            <!-- ADD BUTTON -->
+
+            <Button
+                android:id="@+id/btnSaveItem"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="30dp"
+                android:layout_marginBottom="30dp"
+                android:text="Add Item"
+                android:textSize="17sp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp"
+    android:background="@android:color/white"
+    android:elevation="3dp">
+
+    <TextView
+        android:id="@+id/tvMealName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Meal Name"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        android:textColor="#222222"/>
+
+    <TextView
+        android:id="@+id/tvMealPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="EGP 150"
+        android:textSize="17sp"/>
+
+    <TextView
+        android:id="@+id/tvMealTags"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Pizza, Chicken"
+        android:textSize="15sp"
+        android:textColor="#777777"/>
+
+</LinearLayout>

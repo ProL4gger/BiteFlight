@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
+import com.example.biteflight.ui.profile.EditProfileActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class SellerDashboardActivity : AppCompatActivity() {
@@ -71,6 +72,7 @@ class SellerDashboardActivity : AppCompatActivity() {
 
             val popupMenu = PopupMenu(this, view)
 
+            popupMenu.menu.add("Edit Profile")
             popupMenu.menu.add("My Orders")
             popupMenu.menu.add("About Us")
             popupMenu.menu.add("Support")
@@ -80,6 +82,16 @@ class SellerDashboardActivity : AppCompatActivity() {
             popupMenu.setOnMenuItemClickListener { item ->
 
                 when (item.title.toString()) {
+
+                    "Edit Profile" -> {
+
+                        startActivity(
+                            Intent(
+                                this,
+                                EditProfileActivity::class.java
+                            )
+                        )
+                    }
 
                     "My Orders" -> {
 
@@ -99,14 +111,6 @@ class SellerDashboardActivity : AppCompatActivity() {
                             "About Us",
                             Toast.LENGTH_SHORT
                         ).show()
-
-                        // Later:
-                        // startActivity(
-                        //     Intent(
-                        //         this,
-                        //         AboutUsActivity::class.java
-                        //     )
-                        // )
                     }
 
 
@@ -117,14 +121,6 @@ class SellerDashboardActivity : AppCompatActivity() {
                             "Support",
                             Toast.LENGTH_SHORT
                         ).show()
-
-                        // Later:
-                        // startActivity(
-                        //     Intent(
-                        //         this,
-                        //         SupportActivity::class.java
-                        //     )
-                        // )
                     }
 
 

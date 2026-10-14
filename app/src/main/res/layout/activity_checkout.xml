@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7F7F7"
-    android:fillViewport="true">
+    android:background="@color/background"
+    android:fillViewport="true"
+    tools:ignore="HardcodedText">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,7 +30,7 @@
                 android:text="Checkout"
                 android:textSize="28sp"
                 android:textStyle="bold"
-                android:textColor="#222222" />
+                android:textColor="@color/text_primary" />
 
             <TextView
                 android:id="@+id/tvCheckoutRestaurant"
@@ -37,6 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Restaurant"
+                android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -46,6 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:text="Order Summary"
+                android:textColor="@color/text_secondary"
                 android:textSize="16sp" />
 
             <TextView
@@ -53,6 +56,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Delivery Address"
+                android:textColor="@color/text_primary"
                 android:textStyle="bold" />
 
             <EditText
@@ -60,6 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Enter delivery address"
+                android:textColor="@color/text_primary"
                 android:inputType="textPostalAddress"
                 android:layout_marginTop="6dp" />
 
@@ -70,6 +75,7 @@
                 android:gravity="end"
                 android:layout_marginTop="30dp"
                 android:text="Total: EGP 0"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 

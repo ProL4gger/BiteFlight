@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#F7F7F7">
+    android:background="@color/background"
+    tools:ignore="HardcodedText">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,13 +30,14 @@
                 android:text="Edit Item"
                 android:textSize="28sp"
                 android:textStyle="bold"
-                android:textColor="#222222"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="24dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Meal Name"
+                android:textColor="@color/text_primary"
                 android:textStyle="bold" />
 
             <EditText
@@ -43,12 +45,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Meal Name"
+                android:textColor="@color/text_primary"
                 android:layout_marginBottom="16dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Price"
+                android:textColor="@color/text_primary"
                 android:textStyle="bold" />
 
             <EditText
@@ -56,6 +60,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Price"
+                android:textColor="@color/text_primary"
                 android:inputType="numberDecimal"
                 android:layout_marginBottom="20dp" />
 
@@ -63,6 +68,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Tags"
+                android:textColor="@color/text_primary"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
@@ -70,42 +76,49 @@
                 android:id="@+id/checkPizza"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Pizza" />
 
             <CheckBox
                 android:id="@+id/checkPasta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Pasta" />
 
             <CheckBox
                 android:id="@+id/checkChicken"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Chicken" />
 
             <CheckBox
                 android:id="@+id/checkMeat"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Meat" />
 
             <CheckBox
                 android:id="@+id/checkDessert"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Dessert" />
 
             <CheckBox
                 android:id="@+id/checkBeverages"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Beverages" />
 
             <CheckBox
                 android:id="@+id/checkSandwich"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@color/text_primary"
                 android:text="Sandwich" />
 
             <Button

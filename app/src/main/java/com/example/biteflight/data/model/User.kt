@@ -6,7 +6,8 @@ data class User(
     val email: String = "",
     val phone: String = "",
     val address: String = "",
-    val role: String = ROLE_BUYER
+    val role: String = ROLE_BUYER,
+    val imageUrl: String = ""
 ) {
     companion object {
         const val ROLE_BUYER = "BUYER"

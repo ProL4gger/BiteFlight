@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F7F7F7">
+    android:background="@color/background"
+    tools:ignore="HardcodedText">
 
     <include
         layout="@layout/view_top_bar"
@@ -27,7 +27,7 @@
             android:text="Restaurant"
             android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#222222" />
+            android:textColor="@color/text_primary" />
 
         <TextView
             android:id="@+id/tvEmptyCart"
@@ -37,7 +37,7 @@
             android:layout_marginTop="40dp"
             android:text="Your cart is empty"
             android:textSize="18sp"
-            android:textColor="#777777"
+            android:textColor="@color/text_secondary"
             android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -55,11 +55,9 @@
             android:text="Total: EGP 0"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="#222222"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="14dp" />
-
-        <!-- Proceed to Checkout -->
 
         <Button
             android:id="@+id/btnCheckout"
@@ -67,16 +65,12 @@
             android:layout_height="54dp"
             android:text="Proceed to Checkout" />
 
-        <!-- Return to the same restaurant -->
-
         <Button
             android:id="@+id/btnReturnToMenu"
             android:layout_width="match_parent"
             android:layout_height="54dp"
             android:layout_marginTop="10dp"
             android:text="Continue Shopping" />
-
-        <!-- Remove everything from cart -->
 
         <Button
             android:id="@+id/btnClearCart"

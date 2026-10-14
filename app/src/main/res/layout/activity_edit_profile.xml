@@ -15,39 +15,17 @@
         android:gravity="center"
         android:orientation="vertical"
         android:padding="24dp">
+
         <include
             layout="@layout/view_top_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-        <!-- Logo Header -->
-        <ImageView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:contentDescription="BiteFlight Logo"
-            android:src="@drawable/ic_logo"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="BiteFlight"
-            android:textColor="@color/primary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Update your profile information"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
         <!-- Edit Profile Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             app:cardCornerRadius="24dp"
             app:cardElevation="2dp"
             app:cardBackgroundColor="@color/surface"
@@ -57,25 +35,35 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Edit Profile"
-                    android:textColor="@color/text_primary"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp" />
+                <!-- Profile Picture Preview -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivProfilePicture"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_person"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="2dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="12dp"/>
 
-                <TextView
+                <!-- Upload Image Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUploadImage"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Make changes to your details in real-time"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="24dp" />
+                    android:text="Upload Picture"
+                    android:textColor="@color/primary"
+                    app:strokeColor="@color/primary"
+                    app:icon="@drawable/ic_person"
+                    app:iconTint="@color/primary"
+                    android:layout_marginBottom="24dp"/>
 
                 <!-- Name Input -->
                 <com.google.android.material.textfield.TextInputLayout

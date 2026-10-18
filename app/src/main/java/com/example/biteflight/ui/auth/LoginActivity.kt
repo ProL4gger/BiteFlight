@@ -7,13 +7,14 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.MainActivity
+import com.example.biteflight.R
 import com.example.biteflight.databinding.ActivityLoginBinding
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 import com.example.biteflight.utils.Resource
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
-import android.widget.ImageButton
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.database.FirebaseDatabase
 
 class LoginActivity : AppCompatActivity() {
@@ -30,6 +31,14 @@ class LoginActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         auth = Firebase.auth
+
+        val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.apply {
+            title = "Log In"
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_back)
+        }
 
         setupListeners()
         observeViewModel()
@@ -49,9 +58,12 @@ class LoginActivity : AppCompatActivity() {
                     SignUpActivity::class.java
                 )
             )
-
-            finish()
         }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
     }
 
     private fun performLogin() {
@@ -148,6 +160,8 @@ class LoginActivity : AppCompatActivity() {
                         this,
                         SellerDashboardActivity::class.java
                     )
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
 
                     startActivity(intent)
 
@@ -157,11 +171,13 @@ class LoginActivity : AppCompatActivity() {
                         this,
                         MainActivity::class.java
                     )
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
 
                     startActivity(intent)
                 }
 
-                finishAffinity()
+                finish()
             }
             .addOnFailureListener { error ->
 

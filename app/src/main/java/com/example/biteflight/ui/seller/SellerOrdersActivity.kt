@@ -27,6 +27,7 @@ class SellerOrdersActivity : AppCompatActivity() {
             R.layout.activity_orders
         )
 
+        SellerNavigation.attach(this, R.id.sellerOrders)
         val toolbar =
             findViewById<MaterialToolbar>(
                 R.id.topToolbar

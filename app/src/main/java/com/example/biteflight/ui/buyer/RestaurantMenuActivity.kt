@@ -14,6 +14,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
 import com.example.biteflight.data.model.Meal
+import com.example.biteflight.utils.RestaurantGate
+import com.example.biteflight.utils.RestaurantAvailability
+import com.example.biteflight.data.model.User
+import android.os.Handler
+import android.os.Looper
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.database.FirebaseDatabase
 
@@ -23,6 +31,64 @@ class RestaurantMenuActivity : AppCompatActivity() {
         mutableListOf<Meal>()
 
     private lateinit var adapter: BuyerMealAdapter
+    private var checkingAvailability = false
+    private var sellerProfile: User? = null
+    private var statusListener: ValueEventListener? = null
+    private val statusHandler = Handler(Looper.getMainLooper())
+    private val refreshStatus = object : Runnable {
+        override fun run() {
+            val status = sellerProfile?.let {
+                "${RestaurantAvailability.label(it)}\n${RestaurantAvailability.hours(it)}"
+            } ?: "Restaurant unavailable"
+            findViewById<TextView>(R.id.tvRestaurantAvailability).text = status
+            val availability = sellerProfile?.let { RestaurantAvailability.status(it) }
+            adapter.orderingEnabled = availability == RestaurantAvailability.Status.OPEN
+            adapter.orderButtonLabel = when (availability) {
+                RestaurantAvailability.Status.OPEN -> "Add to cart"
+                RestaurantAvailability.Status.BUSY -> "Busy — orders paused"
+                RestaurantAvailability.Status.CLOSED -> "Closed"
+                null -> "Unavailable"
+            }
+            adapter.notifyDataSetChanged()
+            statusHandler.postDelayed(this, 60_000L - System.currentTimeMillis() % 60_000L)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val sellerId = intent.getStringExtra("sellerId") ?: return
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                sellerProfile = snapshot.getValue(User::class.java)
+                statusHandler.removeCallbacks(refreshStatus)
+                refreshStatus.run()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                sellerProfile = null
+                statusHandler.removeCallbacks(refreshStatus)
+                adapter.orderingEnabled = false
+                adapter.orderButtonLabel = "Unavailable"
+                adapter.notifyDataSetChanged()
+                findViewById<TextView>(R.id.tvRestaurantAvailability).text =
+                    "Could not check restaurant availability"
+            }
+        }
+        statusListener = listener
+        FirebaseDatabase.getInstance().getReference("users").child(sellerId)
+            .addValueEventListener(listener)
+    }
+
+    override fun onStop() {
+        val sellerId = intent.getStringExtra("sellerId")
+        if (sellerId != null) statusListener?.let {
+            FirebaseDatabase.getInstance().getReference("users").child(sellerId)
+                .removeEventListener(it)
+        }
+        statusListener = null
+        statusHandler.removeCallbacks(refreshStatus)
+        super.onStop()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +96,7 @@ class RestaurantMenuActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_restaurant_menu
         )
+        BuyerNavigation.attach(this, R.id.buyerHome)
 
         // -------------------------
         // GET RESTAURANT DATA
@@ -146,6 +213,20 @@ class RestaurantMenuActivity : AppCompatActivity() {
         sellerId: String,
         restaurantName: String
     ) {
+        if (checkingAvailability) return
+        checkingAvailability = true
+        RestaurantGate.check(sellerId) { error ->
+            checkingAvailability = false
+            if (isFinishing || isDestroyed) return@check
+            if (error != null) {
+                Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+            } else {
+                addAvailableMeal(meal, sellerId, restaurantName)
+            }
+        }
+    }
+
+    private fun addAvailableMeal(meal: Meal, sellerId: String, restaurantName: String) {
 
         if (
             CartManager.canAddFromRestaurant(
@@ -184,22 +265,16 @@ class RestaurantMenuActivity : AppCompatActivity() {
                 .setPositiveButton(
                     "Start New Cart"
                 ) { _, _ ->
-
-                    CartManager.clearCart()
-
-                    CartManager.addItem(
-                        meal,
-                        sellerId,
-                        restaurantName
-                    )
-
-                    Toast.makeText(
-                        this,
-                        "New cart started. ${meal.name} added.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    openCart()
+                    RestaurantGate.check(sellerId) { error ->
+                        if (isFinishing || isDestroyed) return@check
+                        if (error != null) {
+                            Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+                        } else {
+                            CartManager.clearCart()
+                            CartManager.addItem(meal, sellerId, restaurantName)
+                            openCart()
+                        }
+                    }
                 }
 
                 .show()

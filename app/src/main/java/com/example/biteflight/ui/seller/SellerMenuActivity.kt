@@ -27,6 +27,7 @@ class SellerMenuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_seller_menu)
+        SellerNavigation.attach(this, R.id.sellerMenu)
 
         // -------------------------
         // TOOLBAR

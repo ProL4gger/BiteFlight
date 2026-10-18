@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -62,6 +63,15 @@ class SignUpActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeButtonEnabled(true)
 
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    returnToLogin()
+                }
+            }
+        )
+
         setupListeners()
         observeViewModel()
     }
@@ -71,17 +81,19 @@ class SignUpActivity : AppCompatActivity() {
     // -------------------------
 
     override fun onSupportNavigateUp(): Boolean {
-
-        val intent =
-            Intent(
-                this,
-                LoginActivity::class.java
-            )
-
-        startActivity(intent)
-        finish()
-
+        onBackPressedDispatcher.onBackPressed()
         return true
+    }
+
+    private fun returnToLogin() {
+        // Login stays beneath signup during normal navigation.
+        if (isTaskRoot) {
+            startActivity(Intent(this, LoginActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+            })
+        }
+        finish()
     }
 
     private fun setupListeners() {
@@ -114,15 +126,7 @@ class SignUpActivity : AppCompatActivity() {
 
         // ALREADY HAVE ACCOUNT
         binding.tvLoginLink.setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    LoginActivity::class.java
-                )
-            )
-
-            finish()
+            returnToLogin()
         }
     }
 
@@ -239,7 +243,10 @@ class SignUpActivity : AppCompatActivity() {
                             Intent(
                                 this,
                                 SellerDashboardActivity::class.java
-                            )
+                            ).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
                         )
 
                     } else {
@@ -248,11 +255,14 @@ class SignUpActivity : AppCompatActivity() {
                             Intent(
                                 this,
                                 MainActivity::class.java
-                            )
+                            ).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            }
                         )
                     }
 
-                    finishAffinity()
+                    finish()
                 }
 
                 is Resource.Error -> {

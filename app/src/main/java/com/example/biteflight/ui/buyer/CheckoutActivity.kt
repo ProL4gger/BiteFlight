@@ -11,6 +11,7 @@ import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
 import com.example.biteflight.data.model.Order
 import com.example.biteflight.data.model.OrderItem
+import com.example.biteflight.utils.RestaurantGate
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -25,6 +26,7 @@ class CheckoutActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_checkout
         )
+        BuyerNavigation.attach(this, R.id.buyerCart)
 
         // -------------------------
         // TOOLBAR
@@ -150,7 +152,21 @@ class CheckoutActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            saveOrder(address)
+            val sellerId = CartManager.restaurantId
+            if (sellerId.isNullOrBlank() || CartManager.isEmpty()) {
+                Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            btnConfirmOrder.isEnabled = false
+            RestaurantGate.check(sellerId) { error ->
+                if (isFinishing || isDestroyed) return@check
+                if (error != null) {
+                    btnConfirmOrder.isEnabled = true
+                    Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+                } else {
+                    saveOrder(address)
+                }
+            }
         }
     }
 
@@ -197,6 +213,7 @@ class CheckoutActivity : AppCompatActivity() {
                 .currentUser
 
         if (buyer == null) {
+            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
 
             Toast.makeText(
                 this,
@@ -212,6 +229,7 @@ class CheckoutActivity : AppCompatActivity() {
             CartManager.restaurantId
 
         if (sellerId.isNullOrEmpty()) {
+            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
 
             Toast.makeText(
                 this,
@@ -234,6 +252,7 @@ class CheckoutActivity : AppCompatActivity() {
                 .key
 
         if (orderId == null) {
+            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
 
             Toast.makeText(
                 this,
@@ -326,6 +345,7 @@ class CheckoutActivity : AppCompatActivity() {
             }
 
             .addOnFailureListener { error ->
+                findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
 
                 Toast.makeText(
                     this,

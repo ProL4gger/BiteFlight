@@ -4,6 +4,6 @@
     android:id="@+id/topToolbar"
     android:layout_width="match_parent"
     android:layout_height="88dp"
-    android:background="@color/surface"
-    android:elevation="6dp"
+    android:background="@color/primary_light"
+    android:elevation="0dp"
     android:layoutDirection="ltr" />

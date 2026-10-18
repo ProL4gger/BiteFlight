@@ -25,6 +25,7 @@ class BuyerOrdersActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_orders
         )
+        BuyerNavigation.attach(this, R.id.buyerOrders)
 
         val toolbar =
             findViewById<MaterialToolbar>(

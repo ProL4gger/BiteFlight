@@ -4,10 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="22dp"
     android:layout_marginBottom="12dp"
-    android:background="@color/surface"
-    android:elevation="3dp">
+    android:background="@drawable/studio_panel"
+    android:elevation="0dp">
 
     <TextView
         android:id="@+id/tvMealName"

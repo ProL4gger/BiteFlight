@@ -19,12 +19,21 @@
 
         <TextView
             android:id="@+id/tvRestaurantName"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Restaurant"
             android:textSize="27sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/primary" android:background="@drawable/studio_soft" android:padding="20dp" />
+
+        <TextView
+            android:id="@+id/tvRestaurantAvailability"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Checking availability…"
+            android:textColor="@color/primary"
+            android:textSize="15sp" />
 
         <TextView
             android:layout_width="wrap_content"

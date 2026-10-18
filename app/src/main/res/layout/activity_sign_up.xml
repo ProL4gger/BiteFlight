@@ -19,37 +19,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-        <!-- Logo Header -->
-        <ImageView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:contentDescription="BiteFlight Logo"
-            android:src="@drawable/ic_logo"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="BiteFlight"
-            android:textColor="@color/primary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Create your account to get started"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- Sign-Up Card -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="@drawable/studio_deep" android:padding="24dp" android:layout_marginBottom="24dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="BiteFlight." android:textSize="20sp" android:textStyle="bold" android:textColor="@color/accent_panel" android:layout_marginBottom="22dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Your next\nchapter starts here." android:textSize="34sp" android:textStyle="bold" android:textColor="@color/white"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Find your favourites. Or share your flavour." android:textSize="14sp" android:textColor="@color/primary_light" android:layout_marginTop="16dp"/>
+        </LinearLayout><!-- Sign-Up Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="24dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/surface"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/primary_light"
             app:strokeColor="@color/border_color"
             app:strokeWidth="1dp">
 
@@ -76,7 +56,7 @@
                     android:orientation="horizontal"
                     android:layout_marginBottom="16dp"
                     android:background="@color/background"
-                    android:padding="4dp">
+                    android:padding="12dp" android:minHeight="48dp" android:gravity="center_vertical">
 
                     <RadioButton
                         android:id="@+id/rbBuyer"
@@ -199,7 +179,7 @@
                     style="@style/Widget.BiteFlight.Button"
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
-                    android:text="Register" />
+                    android:text="Create account →" />
 
                 <ProgressBar
                     android:id="@+id/progressBar"
@@ -235,7 +215,7 @@
                 android:textColor="@color/primary"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:padding="4dp" />
+                android:padding="12dp" android:minHeight="48dp" android:gravity="center_vertical" />
         </LinearLayout>
 
     </LinearLayout>

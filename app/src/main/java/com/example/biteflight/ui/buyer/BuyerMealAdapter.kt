@@ -14,6 +14,9 @@ class BuyerMealAdapter(
     private val onAddToCart: (Meal) -> Unit
 ) : RecyclerView.Adapter<BuyerMealAdapter.MealViewHolder>() {
 
+    var orderingEnabled = false
+    var orderButtonLabel = "Checking availability"
+
     class MealViewHolder(
         itemView: View
     ) : RecyclerView.ViewHolder(itemView) {
@@ -73,6 +76,8 @@ class BuyerMealAdapter(
         holder.tvMealTags.text =
             meal.tags.joinToString(", ")
 
+        holder.btnAddToCart.isEnabled = orderingEnabled
+        holder.btnAddToCart.text = orderButtonLabel
         holder.btnAddToCart.setOnClickListener {
 
             onAddToCart(meal)

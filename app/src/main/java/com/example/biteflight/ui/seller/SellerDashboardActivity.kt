@@ -18,11 +18,15 @@ class SellerDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_seller_dashboard)
+        SellerNavigation.attach(this, R.id.sellerHome)
 
         val btnBack = findViewById<ImageButton>(R.id.btnBack)
         val btnAddItem = findViewById<TextView>(R.id.btnAddItem)
         val btnMenu = findViewById<TextView>(R.id.btnMenu)
         val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
+        findViewById<TextView>(R.id.btnOrders).setOnClickListener {
+            startActivity(Intent(this, SellerOrdersActivity::class.java))
+        }
 
 
         // -------------------------
@@ -30,7 +34,7 @@ class SellerDashboardActivity : AppCompatActivity() {
         // -------------------------
 
         btnBack.setOnClickListener {
-            finish()
+            onBackPressedDispatcher.onBackPressed()
         }
 
 

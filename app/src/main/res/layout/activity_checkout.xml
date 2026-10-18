@@ -25,12 +25,12 @@
             android:padding="24dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Checkout"
                 android:textSize="28sp"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/primary" android:background="@drawable/studio_soft" android:padding="20dp" />
 
             <TextView
                 android:id="@+id/tvCheckoutRestaurant"

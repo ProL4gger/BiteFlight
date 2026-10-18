@@ -7,7 +7,11 @@ data class User(
     val phone: String = "",
     val address: String = "",
     val role: String = ROLE_BUYER,
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val busy: Boolean = false,
+    val openingTime: String = "",
+    val closingTime: String = "",
+    val restaurantTimeZone: String = "Africa/Cairo"
 ) {
     companion object {
         const val ROLE_BUYER = "BUYER"

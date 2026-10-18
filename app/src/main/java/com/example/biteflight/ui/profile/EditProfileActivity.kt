@@ -1,6 +1,9 @@
 package com.example.biteflight.ui.profile
 
 import android.net.Uri
+
+
+
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -26,8 +29,11 @@ class EditProfileActivity : AppCompatActivity() {
     private val viewModel: AuthViewModel by viewModels()
 
     private var currentUserProfile: User? = null
+    private var buyerNavigationAttached = false
     private var uploadedImageUrl: String = ""
     private var previousImageUrl: String = ""
+
+
 
     private val selectImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -77,6 +83,8 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+
+
         binding.btnUploadImage.setOnClickListener {
             selectImageLauncher.launch("image/*")
         }
@@ -149,6 +157,10 @@ class EditProfileActivity : AppCompatActivity() {
                 is Resource.Success -> {
                     binding.progressBar.visibility = View.GONE
                     val profile = resource.data
+                    if (profile.role.equals(User.ROLE_BUYER, true) && !buyerNavigationAttached) {
+                        com.example.biteflight.ui.buyer.BuyerNavigation.attach(this, R.id.buyerProfile)
+                        buyerNavigationAttached = true
+                    }
                     currentUserProfile = profile
                     previousImageUrl = profile.imageUrl
 

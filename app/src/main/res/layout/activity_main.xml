@@ -6,10 +6,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:fitsSystemWindows="true"
     android:background="@color/background"
     tools:ignore="HardcodedText">
 
-    <!-- TOP BAR -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="68dp"
@@ -17,44 +17,35 @@
         android:gravity="center_vertical"
         android:paddingStart="20dp"
         android:paddingEnd="14dp"
-        android:background="@color/surface"
-        android:elevation="5dp">
+        android:background="@color/primary_light"
+        android:elevation="0dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_back"
+            app:tint="@color/text_primary" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center_vertical"
-            android:text="BiteFlight"
+            android:text="BiteFlight."
             android:textColor="@color/primary"
             android:textSize="26sp"
             android:textStyle="bold" />
 
-        <ImageButton
-            android:id="@+id/btnCart"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="center_vertical"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Cart"
-            android:padding="10dp"
-            android:src="@android:drawable/ic_menu_agenda"
-            app:tint="@color/text_primary" />
 
-        <ImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="center_vertical"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Settings"
-            android:padding="10dp"
-            android:src="@android:drawable/ic_menu_manage"
-            app:tint="@color/text_primary" />
+
+
 
     </LinearLayout>
 
-    <!-- BUYER CONTENT -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -65,17 +56,17 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Restaurants"
-            android:textSize="28sp"
+            android:text="Good food.\nGreat mood." android:background="@drawable/studio_deep" android:padding="24dp"
+            android:textSize="34sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/white" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="18dp"
             android:layout_marginBottom="20dp"
-            android:text="Choose a restaurant"
+            android:text="LOCAL KITCHENS · Find your next favourite"
             android:textSize="15sp"
             android:textColor="@color/text_secondary" />
 

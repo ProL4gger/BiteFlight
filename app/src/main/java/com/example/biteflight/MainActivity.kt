@@ -1,21 +1,26 @@
 package com.example.biteflight
 import android.widget.ImageButton
-import com.example.biteflight.ui.buyer.CartActivity
+
 import android.content.Intent
 import android.os.Bundle
-import android.widget.PopupMenu
+
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.data.model.User
-import com.example.biteflight.ui.auth.LoginActivity
+
 import com.example.biteflight.ui.buyer.RestaurantAdapter
 import com.example.biteflight.ui.buyer.RestaurantMenuActivity
-import com.example.biteflight.ui.profile.EditProfileActivity
-import com.google.firebase.auth.FirebaseAuth
+
+
 import com.google.firebase.database.FirebaseDatabase
-import com.example.biteflight.ui.buyer.BuyerOrdersActivity
+
+import android.os.Handler
+import android.os.Looper
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 
 class MainActivity : AppCompatActivity() {
 
@@ -24,112 +29,25 @@ class MainActivity : AppCompatActivity() {
         mutableListOf<User>()
 
     private lateinit var adapter: RestaurantAdapter
+    private val restaurantsReference = FirebaseDatabase.getInstance().getReference("users")
+    private var restaurantsListener: ValueEventListener? = null
+    private val statusHandler = Handler(Looper.getMainLooper())
+    private val refreshStatus = object : Runnable {
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            statusHandler.postDelayed(this, 60_000L - System.currentTimeMillis() % 60_000L)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
+        com.example.biteflight.ui.buyer.BuyerNavigation.attach(this, R.id.buyerHome)
 
-        // -------------------------
-        // SETTINGS BUTTON
-        // -------------------------
-        val btnCart =
-            findViewById<ImageButton>(
-                R.id.btnCart
-            )
-
-        btnCart.setOnClickListener {
-
-            startActivity(
-                Intent(
-                    this,
-                    CartActivity::class.java
-                )
-            )
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
         }
-
-        val btnSettings =
-            findViewById<ImageButton>(R.id.btnSettings)
-
-        btnSettings.setOnClickListener { view ->
-
-            val popupMenu =
-                PopupMenu(this, view)
-
-            popupMenu.menu.add("My Orders")
-            popupMenu.menu.add("Edit Profile")
-            popupMenu.menu.add("Contact Us")
-            popupMenu.menu.add("Support")
-            popupMenu.menu.add("Log Out")
-
-            popupMenu.setOnMenuItemClickListener { item ->
-
-                when (item.title.toString()) {
-
-                    "My Orders" -> {
-
-                        startActivity(
-                            Intent(
-                                this,
-                                BuyerOrdersActivity::class.java
-                            )
-                        )
-                    }
-
-                    "Edit Profile" -> {
-
-                        val intent =
-                            Intent(
-                                this,
-                                EditProfileActivity::class.java
-                            )
-
-                        startActivity(intent)
-                    }
-
-
-                    "Contact Us" -> {
-
-                        Toast.makeText(
-                            this,
-                            "Contact Us",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-
-                    "Support" -> {
-
-                        Toast.makeText(
-                            this,
-                            "Support",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-
-                    "Log Out" -> {
-
-                        FirebaseAuth.getInstance().signOut()
-
-                        val intent =
-                            Intent(
-                                this,
-                                LoginActivity::class.java
-                            )
-
-                        intent.flags =
-                            Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                        startActivity(intent)
-                    }
-                }
-
-                true
-            }
-
-            popupMenu.show()
-        }
-
 
         // -------------------------
         // RESTAURANT LIST
@@ -170,7 +88,19 @@ class MainActivity : AppCompatActivity() {
         recyclerRestaurants.adapter =
             adapter
 
+    }
+
+    override fun onStart() {
+        super.onStart()
         loadRestaurants()
+        statusHandler.post(refreshStatus)
+    }
+
+    override fun onStop() {
+        restaurantsListener?.let { restaurantsReference.removeEventListener(it) }
+        restaurantsListener = null
+        statusHandler.removeCallbacks(refreshStatus)
+        super.onStop()
     }
 
 
@@ -185,9 +115,8 @@ class MainActivity : AppCompatActivity() {
                 .getInstance()
                 .getReference("users")
 
-        database
-            .get()
-            .addOnSuccessListener { snapshot ->
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
 
                 restaurantList.clear()
 
@@ -217,13 +146,16 @@ class MainActivity : AppCompatActivity() {
 
                 adapter.notifyDataSetChanged()
             }
-            .addOnFailureListener { error ->
+            override fun onCancelled(error: DatabaseError) {
 
                 Toast.makeText(
-                    this,
+                    this@MainActivity,
                     "Error: ${error.message}",
                     Toast.LENGTH_LONG
                 ).show()
             }
+        }
+        restaurantsListener = listener
+        database.addValueEventListener(listener)
     }
 }

@@ -107,14 +107,7 @@ class AuthRepository(
                     }
                 } else {
                     Log.e(TAG, "fetchUserProfile:failed", task.exception)
-                    // Fallback on failure so app never hangs
-                    val email = auth.currentUser?.email ?: "user@biteflight.com"
-                    val fallbackUser = User(
-                        uid = uid,
-                        email = email,
-                        name = email.substringBefore("@")
-                    )
-                    onResult(Resource.Success(fallbackUser))
+                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Could not load profile"))
                 }
             }
     }
@@ -125,14 +118,20 @@ class AuthRepository(
     ) {
         onResult(Resource.Loading)
         Log.d(TAG, "Updating user profile for uid: ${user.uid}")
-        database.getReference("users").child(user.uid).setValue(user)
+        database.getReference("users").child(user.uid).updateChildren(mapOf(
+            "name" to user.name,
+            "phone" to user.phone,
+            "address" to user.address,
+            "imageUrl" to user.imageUrl
+        ))
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     Log.d(TAG, "updateUserProfile:success")
+                    onResult(Resource.Success(Unit))
                 } else {
                     Log.e(TAG, "updateUserProfile:failure", task.exception)
+                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Profile could not be saved"))
                 }
-                onResult(Resource.Success(Unit))
             }
     }
 

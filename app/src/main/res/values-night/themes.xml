@@ -1,19 +1,21 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme for Night mode. -->
-    <style name="Base.Theme.BiteFlight" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Brand Colors for Dark Mode -->
+<resources>
+
+    <style name="Base.Theme.BiteFlight"
+        parent="Theme.Material3.Light.NoActionBar">
+
         <item name="colorPrimary">@color/primary</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimaryContainer">@color/primary_light</item>
         <item name="colorOnPrimaryContainer">@color/primary</item>
         <item name="colorSecondary">@color/secondary</item>
-        <item name="colorOnSecondary">@color/black</item>
+        <item name="colorOnSecondary">@color/white</item>
         <item name="android:colorBackground">@color/background</item>
         <item name="colorSurface">@color/surface</item>
         <item name="colorOnSurface">@color/text_primary</item>
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
 
-        <!-- Typography -->
-        <item name="fontFamily">sans-serif-medium</item>
+        <item name="fontFamily">@font/inter</item><item name="android:fontFamily">@font/inter</item><item name="android:windowLightStatusBar">true</item><item name="android:windowLightNavigationBar">true</item><item name="android:statusBarColor">@color/primary_light</item><item name="android:navigationBarColor">@color/background</item><item name="materialButtonStyle">@style/Widget.BiteFlight.Button</item>
+        <item name="homeAsUpIndicator">@drawable/ic_back</item>
     </style>
+
 </resources>

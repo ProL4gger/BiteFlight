@@ -29,6 +29,7 @@ class CartActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_cart)
+        BuyerNavigation.attach(this, R.id.buyerCart)
 
         // -------------------------
         // TOOLBAR

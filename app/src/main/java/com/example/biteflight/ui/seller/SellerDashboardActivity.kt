@@ -1,15 +1,12 @@
 package com.example.biteflight.ui.seller
-
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.PopupMenu
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
-import com.example.biteflight.ui.profile.EditProfileActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class SellerDashboardActivity : AppCompatActivity() {
@@ -18,96 +15,76 @@ class SellerDashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_seller_dashboard)
+
+        // Seller bottom navigation
         SellerNavigation.attach(this, R.id.sellerHome)
 
+        val btnAddItem =
+            findViewById<android.view.View>(R.id.btnAddItem)
 
-        val btnAddItem = findViewById<android.view.View>(R.id.btnAddItem)
-        val btnMenu = findViewById<android.view.View>(R.id.btnMenu)
-        val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
-        findViewById<android.view.View>(R.id.btnOrders).setOnClickListener {
-            startActivity(Intent(this, SellerOrdersActivity::class.java))
-        }
+        val btnMenu =
+            findViewById<android.view.View>(R.id.btnMenu)
 
+        val btnEdit =
+            findViewById<ImageButton>(R.id.btnEdit)
 
-        // -------------------------
-        // BACK BUTTON
-        // -------------------------
+        // Dashboard Orders shortcut
+        findViewById<android.view.View>(R.id.btnOrders)
+            .setOnClickListener {
+                startActivity(
+                    Intent(
+                        this,
+                        SellerOrdersActivity::class.java
+                    )
+                )
+            }
 
-        findViewById<ImageButton>(R.id.btnNotifications).setOnClickListener { startActivity(Intent(this, SellerOrdersActivity::class.java)) }
+        // Notifications
+        findViewById<ImageButton>(R.id.btnNotifications)
+            .setOnClickListener {
+                startActivity(
+                    Intent(
+                        this,
+                        SellerOrdersActivity::class.java
+                    )
+                )
+            }
 
-
-        // -------------------------
-        // ADD ITEM
-        // -------------------------
-
+        // Add Item
         btnAddItem.setOnClickListener {
-
-            val intent = Intent(
-                this,
-                AddItemActivity::class.java
+            startActivity(
+                Intent(
+                    this,
+                    AddItemActivity::class.java
+                )
             )
-
-            startActivity(intent)
         }
 
-
-        // -------------------------
-        // MENU
-        // -------------------------
-
+        // Restaurant Menu
         btnMenu.setOnClickListener {
-
-            val intent = Intent(
-                this,
-                SellerMenuActivity::class.java
+            startActivity(
+                Intent(
+                    this,
+                    SellerMenuActivity::class.java
+                )
             )
-
-            startActivity(intent)
         }
 
-
-        // -------------------------
-        // TOP RIGHT POPUP MENU
-        // -------------------------
-
+        // Top-right Action Menu
         btnEdit.setOnClickListener { view ->
 
             val popupMenu = PopupMenu(this, view)
 
-            popupMenu.menu.add("Edit Profile")
-            popupMenu.menu.add("My Orders")
+            // Only these options remain
             popupMenu.menu.add("About Us")
             popupMenu.menu.add("Support")
             popupMenu.menu.add("Log Out")
-
 
             popupMenu.setOnMenuItemClickListener { item ->
 
                 when (item.title.toString()) {
 
-                    "Edit Profile" -> {
-
-                        startActivity(
-                            Intent(
-                                this,
-                                EditProfileActivity::class.java
-                            )
-                        )
-                    }
-
-                    "My Orders" -> {
-
-                        startActivity(
-                            Intent(
-                                this,
-                                SellerOrdersActivity::class.java
-                            )
-                        )
-                    }
-
-
                     "About Us" -> {
-
                         Toast.makeText(
                             this,
                             "About Us",
@@ -115,9 +92,7 @@ class SellerDashboardActivity : AppCompatActivity() {
                         ).show()
                     }
 
-
                     "Support" -> {
-
                         Toast.makeText(
                             this,
                             "Support",
@@ -125,12 +100,8 @@ class SellerDashboardActivity : AppCompatActivity() {
                         ).show()
                     }
 
-
                     "Log Out" -> {
-
-                        FirebaseAuth
-                            .getInstance()
-                            .signOut()
+                        FirebaseAuth.getInstance().signOut()
 
                         val intent = Intent(
                             this,
@@ -142,7 +113,6 @@ class SellerDashboardActivity : AppCompatActivity() {
                                     Intent.FLAG_ACTIVITY_CLEAR_TASK
 
                         startActivity(intent)
-
                         finish()
                     }
                 }

@@ -11,7 +11,8 @@ data class User(
     val busy: Boolean = false,
     val openingTime: String = "",
     val closingTime: String = "",
-    val restaurantTimeZone: String = "Africa/Cairo"
+    val restaurantTimeZone: String = "Africa/Cairo",
+    val deliveryAddressDetails: DeliveryAddress = DeliveryAddress()
 ) {
     companion object {
         const val ROLE_BUYER = "BUYER"

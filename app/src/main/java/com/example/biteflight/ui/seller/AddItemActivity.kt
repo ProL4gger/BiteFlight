@@ -1,3 +1,4 @@
+
 package com.example.biteflight.ui.seller
 
 import android.net.Uri
@@ -24,14 +25,12 @@ import com.google.firebase.database.FirebaseDatabase
 class AddItemActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
-    private var uploadedImageUrl: String = ""
+    private var uploadedImageUrl = ""
 
     private val selectImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) {
-            uploadMealPictureToS3(uri)
-        }
+        if (uri != null) uploadMealPictureToS3(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,35 +38,38 @@ class AddItemActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_item)
 
         auth = FirebaseAuth.getInstance()
-        uploadedImageUrl = savedInstanceState?.getString("uploadedImageUrl").orEmpty()
+        uploadedImageUrl =
+            savedInstanceState?.getString("uploadedImageUrl").orEmpty()
+
+        val image = findViewById<ImageView>(R.id.ivMealImage)
+
         if (uploadedImageUrl.isNotBlank()) {
-            findViewById<ImageView>(R.id.ivMealImage).load(uploadedImageUrl)
+            image.load(uploadedImageUrl)
         }
 
         val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
+
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
-            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val statusBarInsets = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars()
+            )
             view.updatePadding(top = statusBarInsets.top)
             insets
         }
-        ViewCompat.requestApplyInsets(toolbar)
 
+        ViewCompat.requestApplyInsets(toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Add Item"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeButtonEnabled(true)
 
         val etMealName = findViewById<EditText>(R.id.etMealName)
         val etPrice = findViewById<EditText>(R.id.etPrice)
-        val checkPizza = findViewById<CheckBox>(R.id.checkPizza)
-        val checkPasta = findViewById<CheckBox>(R.id.checkPasta)
-        val checkChicken = findViewById<CheckBox>(R.id.checkChicken)
-        val checkMeat = findViewById<CheckBox>(R.id.checkMeat)
-        val checkDessert = findViewById<CheckBox>(R.id.checkDessert)
-        val checkBeverages = findViewById<CheckBox>(R.id.checkBeverages)
-        val checkSandwich = findViewById<CheckBox>(R.id.checkSandwich)
-        val btnUploadMealImage = findViewById<Button>(R.id.btnUploadMealImage)
-        val btnSaveItem = findViewById<Button>(R.id.btnSaveItem)
+        val etCustomTags = findViewById<EditText>(R.id.etCustomTags)
+
+        val btnUploadMealImage =
+            findViewById<Button>(R.id.btnUploadMealImage)
+        val btnSaveItem =
+            findViewById<Button>(R.id.btnSaveItem)
 
         btnUploadMealImage.setOnClickListener {
             selectImageLauncher.launch("image/*")
@@ -76,81 +78,125 @@ class AddItemActivity : AppCompatActivity() {
         btnSaveItem.setOnClickListener {
             val mealName = etMealName.text.toString().trim()
             val priceText = etPrice.text.toString().trim()
+            val price = priceText.toDoubleOrNull()
 
-            val selectedTags = mutableListOf<String>()
-            if (checkPizza.isChecked) selectedTags.add("Pizza")
-            if (checkPasta.isChecked) selectedTags.add("Pasta")
-            if (checkChicken.isChecked) selectedTags.add("Chicken")
-            if (checkMeat.isChecked) selectedTags.add("Meat")
-            if (checkDessert.isChecked) selectedTags.add("Dessert")
-            if (checkBeverages.isChecked) selectedTags.add("Beverages")
-            if (checkSandwich.isChecked) selectedTags.add("Sandwich")
+            val selectedTags = collectTags()
 
-            if (mealName.isEmpty()) {
+            val customTags = etCustomTags.text.toString()
+                .split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+
+            selectedTags.addAll(customTags)
+
+            val uniqueTags = selectedTags.distinctBy {
+                it.lowercase()
+            }
+
+            if (mealName.isBlank()) {
                 etMealName.error = "Enter meal name"
                 return@setOnClickListener
             }
 
-            if (priceText.isEmpty()) {
-                etPrice.error = "Enter price"
-                return@setOnClickListener
-            }
-
-            val price = priceText.toDoubleOrNull()
-            if (price == null || price <= 0) {
+            if (price == null || !price.isFinite() || price <= 0) {
                 etPrice.error = "Enter a valid price"
                 return@setOnClickListener
             }
 
-            if (selectedTags.isEmpty()) {
-                Toast.makeText(this, "Choose at least one tag", Toast.LENGTH_SHORT).show()
+            if (uniqueTags.isEmpty()) {
+                Toast.makeText(
+                    this,
+                    "Select or add at least one tag",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
-            saveMealToFirebase(mealName, price, selectedTags, uploadedImageUrl)
+            saveMealToFirebase(
+                mealName = mealName,
+                price = price,
+                tags = uniqueTags,
+                imageUrl = uploadedImageUrl
+            )
         }
+    }
+
+    private fun collectTags(): MutableList<String> {
+        val tags = mutableListOf<String>()
+
+        val predefinedTags = listOf(
+            R.id.checkPizza to "Pizza",
+            R.id.checkPasta to "Pasta",
+            R.id.checkChicken to "Chicken",
+            R.id.checkMeat to "Meat",
+            R.id.checkDessert to "Dessert",
+            R.id.checkBeverages to "Beverages",
+            R.id.checkSandwich to "Sandwich"
+        )
+
+        for ((checkboxId, tagName) in predefinedTags) {
+            if (findViewById<CheckBox>(checkboxId).isChecked) {
+                tags.add(tagName)
+            }
+        }
+
+        return tags
     }
 
     private fun uploadMealPictureToS3(uri: Uri) {
         val ivMealImage = findViewById<ImageView>(R.id.ivMealImage)
-        val btnUploadMealImage = findViewById<Button>(R.id.btnUploadMealImage)
+        val btnUpload = findViewById<Button>(R.id.btnUploadMealImage)
+        val btnSave = findViewById<Button>(R.id.btnSaveItem)
 
-        findViewById<Button>(R.id.btnSaveItem).isEnabled = false
-        btnUploadMealImage.isEnabled = false
+        btnSave.isEnabled = false
+        btnUpload.isEnabled = false
+
         S3Uploader.uploadImage(
             context = this,
             imageUri = uri,
             folderName = "meals"
         ) { resource ->
+
             if (isFinishing || isDestroyed) return@uploadImage
+
             when (resource) {
                 is Resource.Loading -> {
-                    btnUploadMealImage.isEnabled = false
-                    Toast.makeText(this, "Uploading image to AWS S3...", Toast.LENGTH_SHORT).show()
+                    btnUpload.text = "Uploading image..."
                 }
+
                 is Resource.Success -> {
-                    findViewById<Button>(R.id.btnSaveItem).isEnabled = true
-                    btnUploadMealImage.isEnabled = true
                     uploadedImageUrl = resource.data
+
                     ivMealImage.load(uploadedImageUrl) {
                         crossfade(true)
                         placeholder(R.drawable.ic_logo)
                         error(R.drawable.ic_logo)
                     }
-                    Toast.makeText(this, "Image uploaded to AWS S3 successfully!", Toast.LENGTH_SHORT).show()
+
+                    btnSave.isEnabled = true
+                    btnUpload.isEnabled = true
+                    btnUpload.text = "Replace Item Picture"
+
+                    Toast.makeText(
+                        this,
+                        "Image uploaded successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
+
                 is Resource.Error -> {
-                    findViewById<Button>(R.id.btnSaveItem).isEnabled = true
-                    btnUploadMealImage.isEnabled = true
-                    Toast.makeText(this, resource.message, Toast.LENGTH_LONG).show()
+                    btnSave.isEnabled = true
+                    btnUpload.isEnabled = true
+                    btnUpload.text = "Upload Item Picture"
+
+                    Toast.makeText(
+                        this,
+                        resource.message,
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
     }
 
     private fun saveMealToFirebase(
@@ -160,17 +206,27 @@ class AddItemActivity : AppCompatActivity() {
         imageUrl: String
     ) {
         val currentUser = auth.currentUser
+
         if (currentUser == null) {
-            Toast.makeText(this, "Seller is not logged in", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Seller is not logged in",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        val sellerId = currentUser.uid
-        val database = FirebaseDatabase.getInstance().getReference("menuItems")
+        val database = FirebaseDatabase.getInstance()
+            .getReference("menuItems")
+
         val itemId = database.push().key
 
         if (itemId == null) {
-            Toast.makeText(this, "Could not create item", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Could not create item",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
@@ -179,22 +235,40 @@ class AddItemActivity : AppCompatActivity() {
             name = mealName,
             price = price,
             tags = tags,
-            sellerId = sellerId,
+            sellerId = currentUser.uid,
             imageUrl = imageUrl
         )
 
-        findViewById<Button>(R.id.btnSaveItem).isEnabled = false
-        findViewById<Button>(R.id.btnUploadMealImage).isEnabled = false
+        val btnSave = findViewById<Button>(R.id.btnSaveItem)
+        val btnUpload = findViewById<Button>(R.id.btnUploadMealImage)
+
+        btnSave.isEnabled = false
+        btnUpload.isEnabled = false
+
         database.child(itemId).setValue(meal)
             .addOnSuccessListener {
-                Toast.makeText(this, "Item added successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Item added successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
                 finish()
             }
             .addOnFailureListener { error ->
-                findViewById<Button>(R.id.btnSaveItem).isEnabled = true
-                findViewById<Button>(R.id.btnUploadMealImage).isEnabled = true
-                Toast.makeText(this, "Error: ${error.message}", Toast.LENGTH_LONG).show()
+                btnSave.isEnabled = true
+                btnUpload.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    "Error: ${error.message}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

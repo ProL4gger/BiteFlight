@@ -1,3 +1,4 @@
+
 package com.example.biteflight.data.repository
 
 import android.util.Log
@@ -15,7 +16,8 @@ class AuthRepository(
         private const val TAG = "AuthRepository"
     }
 
-    val currentUser: FirebaseUser? get() = auth.currentUser
+    val currentUser: FirebaseUser?
+        get() = auth.currentUser
 
     fun signUp(
         user: User,
@@ -23,33 +25,39 @@ class AuthRepository(
         onResult: (Resource<FirebaseUser>) -> Unit
     ) {
         onResult(Resource.Loading)
+
         auth.createUserWithEmailAndPassword(user.email, password)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Log.d(TAG, "createUserWithEmail:success")
-                    val firebaseUser = auth.currentUser
-                    if (firebaseUser != null) {
-                        val userWithUid = user.copy(uid = firebaseUser.uid)
-                        database.getReference("users")
-                            .child(firebaseUser.uid)
-                            .setValue(userWithUid)
-                            .addOnCompleteListener { dbTask ->
-                                if (dbTask.isSuccessful) {
-                                    Log.d(TAG, "saveUserProfile:success")
-                                } else {
-                                    Log.e(TAG, "saveUserProfile:failure", dbTask.exception)
-                                }
-                                // Always proceed to Success so registration never hangs
-                                onResult(Resource.Success(firebaseUser))
-                            }
-                    } else {
-                        Log.e(TAG, "createUserWithEmail: firebaseUser is null")
-                        onResult(Resource.Error("User registration failed"))
-                    }
-                } else {
-                    Log.w(TAG, "createUserWithEmail:failure", task.exception)
-                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Authentication failed."))
+                if (!task.isSuccessful) {
+                    onResult(Resource.Error(
+                        task.exception?.localizedMessage
+                            ?: "Authentication failed."
+                    ))
+                    return@addOnCompleteListener
                 }
+
+                val firebaseUser = auth.currentUser
+                if (firebaseUser == null) {
+                    onResult(Resource.Error("Registration failed"))
+                    return@addOnCompleteListener
+                }
+
+                val userWithUid = user.copy(uid = firebaseUser.uid)
+
+                database.getReference("users")
+                    .child(firebaseUser.uid)
+                    .setValue(userWithUid)
+                    .addOnCompleteListener { dbTask ->
+                        if (dbTask.isSuccessful) {
+                            onResult(Resource.Success(firebaseUser))
+                        } else {
+                            Log.e(TAG, "Profile save failed", dbTask.exception)
+                            onResult(Resource.Error(
+                                dbTask.exception?.localizedMessage
+                                    ?: "Could not save profile"
+                            ))
+                        }
+                    }
             }
     }
 
@@ -59,10 +67,10 @@ class AuthRepository(
         onResult: (Resource<FirebaseUser>) -> Unit
     ) {
         onResult(Resource.Loading)
+
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d(TAG, "signInWithEmail:success")
                     val firebaseUser = auth.currentUser
                     if (firebaseUser != null) {
                         onResult(Resource.Success(firebaseUser))
@@ -70,8 +78,10 @@ class AuthRepository(
                         onResult(Resource.Error("Sign in failed"))
                     }
                 } else {
-                    Log.w(TAG, "signInWithEmail:failure", task.exception)
-                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Authentication failed."))
+                    onResult(Resource.Error(
+                        task.exception?.localizedMessage
+                            ?: "Authentication failed."
+                    ))
                 }
             }
     }
@@ -81,33 +91,42 @@ class AuthRepository(
         onResult: (Resource<User>) -> Unit
     ) {
         onResult(Resource.Loading)
-        Log.d(TAG, "Fetching user profile for uid: $uid")
-        
+
         database.getReference("users").child(uid).get()
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val snapshot = task.result
-                    Log.d(TAG, "fetchUserProfile:complete, exists=${snapshot?.exists()}")
-                    val user = snapshot?.getValue(User::class.java)
-                    if (user != null) {
-                        onResult(Resource.Success(user))
-                    } else {
-                        // Fallback: Create default profile if missing
-                        val email = auth.currentUser?.email ?: "user@biteflight.com"
-                        val fallbackUser = User(
-                            uid = uid,
-                            email = email,
-                            name = email.substringBefore("@"),
-                            role = User.ROLE_BUYER
-                        )
-                        database.getReference("users").child(uid).setValue(fallbackUser)
-                            .addOnCompleteListener {
-                                onResult(Resource.Success(fallbackUser))
-                            }
-                    }
+                if (!task.isSuccessful) {
+                    onResult(Resource.Error(
+                        task.exception?.localizedMessage
+                            ?: "Could not load profile"
+                    ))
+                    return@addOnCompleteListener
+                }
+
+                val user = task.result?.getValue(User::class.java)
+
+                if (user != null) {
+                    onResult(Resource.Success(user))
                 } else {
-                    Log.e(TAG, "fetchUserProfile:failed", task.exception)
-                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Could not load profile"))
+                    val email = auth.currentUser?.email.orEmpty()
+                    val fallbackUser = User(
+                        uid = uid,
+                        email = email,
+                        name = email.substringBefore("@"),
+                        role = User.ROLE_BUYER
+                    )
+
+                    database.getReference("users")
+                        .child(uid)
+                        .setValue(fallbackUser)
+                        .addOnCompleteListener { saveTask ->
+                            if (saveTask.isSuccessful) {
+                                onResult(Resource.Success(fallbackUser))
+                            } else {
+                                onResult(Resource.Error(
+                                    "Could not create user profile"
+                                ))
+                            }
+                        }
                 }
             }
     }
@@ -117,20 +136,30 @@ class AuthRepository(
         onResult: (Resource<Unit>) -> Unit
     ) {
         onResult(Resource.Loading)
-        Log.d(TAG, "Updating user profile for uid: ${user.uid}")
-        database.getReference("users").child(user.uid).updateChildren(mapOf(
+
+        val updates = mutableMapOf<String, Any>(
             "name" to user.name,
             "phone" to user.phone,
             "address" to user.address,
             "imageUrl" to user.imageUrl
-        ))
+        )
+
+        if (user.role.equals(User.ROLE_BUYER, true)) {
+            updates["deliveryAddressDetails"] =
+                user.deliveryAddressDetails
+        }
+
+        database.getReference("users")
+            .child(user.uid)
+            .updateChildren(updates)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d(TAG, "updateUserProfile:success")
                     onResult(Resource.Success(Unit))
                 } else {
-                    Log.e(TAG, "updateUserProfile:failure", task.exception)
-                    onResult(Resource.Error(task.exception?.localizedMessage ?: "Profile could not be saved"))
+                    onResult(Resource.Error(
+                        task.exception?.localizedMessage
+                            ?: "Profile could not be saved"
+                    ))
                 }
             }
     }

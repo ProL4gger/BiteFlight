@@ -1,33 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/background"
-    tools:context=".ui.profile.EditProfileActivity">
+    android:background="@color/background">
 
     <LinearLayout
-        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:orientation="vertical"
         android:padding="24dp">
 
-        <include
-            layout="@layout/view_top_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+        <include layout="@layout/view_top_bar" />
 
-        <!-- Edit Profile Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             app:cardCornerRadius="24dp"
-            app:cardElevation="0dp"
             app:cardBackgroundColor="@color/primary_light"
             app:strokeColor="@color/border_color"
             app:strokeWidth="1dp">
@@ -35,110 +27,97 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="20dp">
 
-                <!-- Profile Picture Preview -->
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivProfilePicture"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:scaleType="centerCrop"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
                     android:src="@drawable/ic_person"
+                    android:scaleType="centerCrop"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
                     app:strokeColor="@color/primary"
-                    app:strokeWidth="2dp"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="12dp"/>
+                    app:strokeWidth="2dp" />
 
-                <!-- Upload Image Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnUploadImage"
                     style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Upload Picture"
-                    android:textColor="@color/primary"
-                    app:strokeColor="@color/primary"
-                    app:icon="@drawable/ic_person"
-                    app:iconTint="@color/primary"
-                    android:layout_marginBottom="24dp"/>
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="24dp"
+                    android:text="Upload Picture" />
 
-                <!-- Name Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEditName"
                     style="@style/Widget.BiteFlight.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:startIconDrawable="@drawable/ic_person"
                     android:hint="Full / Business Name">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEditName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
                         android:inputType="textPersonName" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Phone Input -->
                 <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilEditPhone"
                     style="@style/Widget.BiteFlight.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    app:startIconDrawable="@drawable/ic_phone"
                     android:hint="Phone Number">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEditPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
                         android:inputType="phone" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Address Input -->
+                <!-- Visible for sellers -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilEditAddress"
                     style="@style/Widget.BiteFlight.TextInputLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    app:startIconDrawable="@drawable/ic_location"
-                    android:hint="Delivery or Store Address">
+                    android:layout_marginBottom="16dp"
+                    android:hint="Restaurant Address">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etEditAddress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_primary"
                         android:inputType="textPostalAddress" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Visible for buyers -->
+                <include
+                    android:id="@+id/buyerAddressForm"
+                    layout="@layout/view_delivery_address"
+                    android:visibility="gone" />
 
-
-                <!-- Save Button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveProfile"
                     style="@style/Widget.BiteFlight.Button"
                     android:layout_width="match_parent"
                     android:layout_height="54dp"
+                    android:layout_marginTop="12dp"
                     android:text="Save Changes" />
 
                 <ProgressBar
                     android:id="@+id/progressBar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:visibility="gone"
-                    android:layout_marginTop="16dp" />
-
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
     </LinearLayout>
 </ScrollView>

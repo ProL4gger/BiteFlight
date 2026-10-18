@@ -1,5 +1,4 @@
 package com.example.biteflight.ui.auth
-
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -7,61 +6,30 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.example.biteflight.MainActivity
 import com.example.biteflight.R
+import com.example.biteflight.data.model.DeliveryAddress
 import com.example.biteflight.data.model.User
 import com.example.biteflight.databinding.ActivitySignUpBinding
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 import com.example.biteflight.utils.Resource
+import android.widget.EditText
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
 
 class SignUpActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignUpBinding
-    private lateinit var auth: FirebaseAuth
-
     private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivitySignUpBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        auth = Firebase.auth
-
-        // -------------------------
-        // TOP TOOLBAR
-        // -------------------------
-
-        val toolbar =
-            findViewById<MaterialToolbar>(R.id.topToolbar)
-
-        ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
-
-            val statusBarInsets =
-                insets.getInsets(WindowInsetsCompat.Type.statusBars())
-
-            view.updatePadding(
-                top = statusBarInsets.top
-            )
-
-            insets
-        }
-
-        ViewCompat.requestApplyInsets(toolbar)
-
+        val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
         setSupportActionBar(toolbar)
-
         supportActionBar?.title = "Sign Up"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeButtonEnabled(true)
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -72,211 +40,173 @@ class SignUpActivity : AppCompatActivity() {
             }
         )
 
-        setupListeners()
-        observeViewModel()
-    }
-
-    // -------------------------
-    // BACK BUTTON
-    // -------------------------
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
-    }
-
-    private fun returnToLogin() {
-        // Login stays beneath signup during normal navigation.
-        if (isTaskRoot) {
-            startActivity(Intent(this, LoginActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
-            })
-        }
-        finish()
-    }
-
-    private fun setupListeners() {
-
-        // Change hints depending on selected role
-        binding.rgRole.setOnCheckedChangeListener { _, checkedId ->
-
-            if (checkedId == binding.rbSeller.id) {
-
-                binding.tilName.hint =
-                    "Business / Restaurant Name"
-
-                binding.tilAddress.hint =
-                    "Store / Restaurant Address"
-
-            } else {
-
-                binding.tilName.hint =
-                    "Full Name"
-
-                binding.tilAddress.hint =
-                    "Delivery Address"
-            }
+        binding.rgRole.setOnCheckedChangeListener { _, _ ->
+            updateRoleFields()
         }
 
-        // SIGN UP BUTTON
+        updateRoleFields()
+
         binding.btnSignUp.setOnClickListener {
             performSignUp()
         }
 
-        // ALREADY HAVE ACCOUNT
         binding.tvLoginLink.setOnClickListener {
             returnToLogin()
         }
+
+        observeViewModel()
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        returnToLogin()
+        return true
+    }
+
+    private fun returnToLogin() {
+        if (isTaskRoot) {
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
+        finish()
+    }
+
+
+    private fun updateRoleFields() {
+        val isSeller = binding.rbSeller.isChecked
+
+        binding.tilName.hint =
+            if (isSeller) "Business / Restaurant Name"
+            else "Full Name"
+
+        binding.tilAddress.visibility =
+            if (isSeller) View.VISIBLE else View.GONE
+
+        findViewById<View>(R.id.buyerAddressForm).visibility =
+            if (isSeller) View.GONE else View.VISIBLE
+    }
+
+
+
+    private fun readDeliveryAddress(): DeliveryAddress {
+
+        return DeliveryAddress(
+            city = findViewById<EditText>(R.id.etCity)
+                .text.toString().trim(),
+
+            area = findViewById<EditText>(R.id.etArea)
+                .text.toString().trim(),
+
+            street = findViewById<EditText>(R.id.etStreet)
+                .text.toString().trim(),
+
+            building = findViewById<EditText>(R.id.etBuilding)
+                .text.toString().trim(),
+
+            floor = findViewById<EditText>(R.id.etFloor)
+                .text.toString().trim(),
+
+            apartment = findViewById<EditText>(R.id.etApartment)
+                .text.toString().trim(),
+
+            landmark = findViewById<EditText>(R.id.etLandmark)
+                .text.toString().trim(),
+
+            instructions = findViewById<EditText>(R.id.etInstructions)
+                .text.toString().trim()
+        )
+    }
+
+
     private fun performSignUp() {
+        val name = binding.etName.text.toString().trim()
+        val email = binding.etEmail.text.toString().trim()
+        val password = binding.etPassword.text.toString()
+        val phone = binding.etPhone.text.toString().trim()
 
-        val name =
-            binding.etName.text.toString().trim()
+        val isSeller = binding.rbSeller.isChecked
+        val role = if (isSeller) User.ROLE_SELLER else User.ROLE_BUYER
 
-        val email =
-            binding.etEmail.text.toString().trim()
+        val details = if (isSeller) DeliveryAddress() else readDeliveryAddress()
 
-        val password =
-            binding.etPassword.text.toString().trim()
-
-        val phone =
-            binding.etPhone.text.toString().trim()
-
-        val address =
+        val address = if (isSeller) {
             binding.etAddress.text.toString().trim()
+        } else {
+            details.formatted()
+        }
 
-        val role =
-            if (binding.rbSeller.isChecked) {
-
-                User.ROLE_SELLER
-
-            } else {
-
-                User.ROLE_BUYER
-            }
-
-        // -------------------------
-        // VALIDATION
-        // -------------------------
-
-        if (
-            name.isEmpty() ||
-            email.isEmpty() ||
-            password.isEmpty() ||
-            phone.isEmpty() ||
-            address.isEmpty()
+        if (name.isBlank() || email.isBlank() ||
+            password.isBlank() || phone.isBlank()
         ) {
-
             Toast.makeText(
-                this,
-                "Please fill in all required fields",
+                this, "Please complete all account fields",
                 Toast.LENGTH_SHORT
             ).show()
+            return
+        }
 
+        if (isSeller && address.isBlank()) {
+            binding.etAddress.error = "Enter restaurant address"
+            return
+        }
+
+        if (!isSeller && !details.isValid()) {
+            Toast.makeText(
+                this,
+                "City, area, street and building are required",
+                Toast.LENGTH_LONG
+            ).show()
             return
         }
 
         if (password.length < 6) {
-
             Toast.makeText(
-                this,
-                "Password must be at least 6 characters",
+                this, "Password must be at least 6 characters",
                 Toast.LENGTH_SHORT
             ).show()
-
             return
         }
 
-        // -------------------------
-        // CREATE USER OBJECT
-        // -------------------------
-
-        val user =
-            User(
-                name = name,
-                email = email,
-                phone = phone,
-                address = address,
-                role = role
-            )
-
-        viewModel.signUp(
-            user,
-            password
+        val user = User(
+            name = name,
+            email = email,
+            phone = phone,
+            role = role,
+            address = address,
+            deliveryAddressDetails = details
         )
+
+        viewModel.signUp(user, password)
     }
 
     private fun observeViewModel() {
-
         viewModel.signUpState.observe(this) { resource ->
-
             when (resource) {
-
                 is Resource.Loading -> {
-
-                    binding.progressBar.visibility =
-                        View.VISIBLE
-
-                    binding.btnSignUp.isEnabled =
-                        false
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.btnSignUp.isEnabled = false
                 }
 
                 is Resource.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.btnSignUp.isEnabled = true
 
-                    binding.progressBar.visibility =
-                        View.GONE
+                    val destination =
+                        if (binding.rbSeller.isChecked)
+                            SellerDashboardActivity::class.java
+                        else
+                            MainActivity::class.java
 
-                    binding.btnSignUp.isEnabled =
-                        true
-
-                    Toast.makeText(
-                        this,
-                        "Account created successfully!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    if (binding.rbSeller.isChecked) {
-
-                        startActivity(
-                            Intent(
-                                this,
-                                SellerDashboardActivity::class.java
-                            ).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            }
-                        )
-
-                    } else {
-
-                        startActivity(
-                            Intent(
-                                this,
-                                MainActivity::class.java
-                            ).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            }
-                        )
-                    }
-
+                    startActivity(Intent(this, destination).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    })
                     finish()
                 }
 
                 is Resource.Error -> {
-
-                    binding.progressBar.visibility =
-                        View.GONE
-
-                    binding.btnSignUp.isEnabled =
-                        true
-
+                    binding.progressBar.visibility = View.GONE
+                    binding.btnSignUp.isEnabled = true
                     Toast.makeText(
-                        this,
-                        resource.message,
-                        Toast.LENGTH_LONG
+                        this, resource.message, Toast.LENGTH_LONG
                     ).show()
                 }
             }

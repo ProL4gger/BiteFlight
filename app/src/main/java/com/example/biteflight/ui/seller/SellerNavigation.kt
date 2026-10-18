@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.example.biteflight.R
 import com.example.biteflight.ui.FloatingNavigationBar
+import com.example.biteflight.ui.profile.EditProfileActivity
 
 object SellerNavigation {
     fun attach(activity: AppCompatActivity, selected: Int) {
@@ -34,6 +35,7 @@ object SellerNavigation {
                     R.id.sellerMenu -> SellerMenuActivity::class.java
                     R.id.sellerOrders -> SellerOrdersActivity::class.java
                     R.id.sellerAvailability -> SellerAvailabilityActivity::class.java
+                    R.id.sellerProfile -> EditProfileActivity::class.java
                     else -> SellerDashboardActivity::class.java
                 }
                 activity.startActivity(Intent(activity, destination).apply {

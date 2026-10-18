@@ -1,16 +1,132 @@
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="14dp" android:clickable="true" android:focusable="true" app:cardBackgroundColor="@color/surface" app:cardCornerRadius="18dp" app:cardElevation="1dp" app:strokeColor="#EEE5F6" app:strokeWidth="1dp">
-<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-<FrameLayout android:layout_width="match_parent" android:layout_height="144dp" android:background="@drawable/card_order_gradient">
-<ImageView android:id="@+id/ivRestaurantPhoto" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:importantForAccessibility="no" android:src="@drawable/ic_logo"/>
-<View android:id="@+id/restaurantPhotoDim" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#66000000" android:visibility="gone"/>
-<TextView android:id="@+id/tvRestaurantPhotoStatus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:paddingHorizontal="18dp" android:paddingVertical="10dp" android:background="@drawable/busy_pill" android:textSize="16sp" android:textStyle="bold" android:textColor="@color/white" android:visibility="gone"/>
-<androidx.appcompat.widget.AppCompatImageButton android:id="@+id/btnFavourite" android:layout_width="48dp" android:layout_height="48dp" android:layout_gravity="end|top" android:padding="11dp" android:background="@android:color/transparent" android:contentDescription="Save restaurant" app:srcCompat="@drawable/ic_heart" app:tint="@color/white"/>
-<TextView android:id="@+id/tvIllustrativePhoto" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:text="Illustrative photo" android:textSize="9sp" android:textColor="@color/white" android:background="#88000000" android:padding="4dp" android:visibility="gone"/>
-</FrameLayout>
-<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="12dp" android:paddingVertical="10dp">
-<TextView android:id="@+id/tvRestaurantName" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Restaurant" android:textSize="17sp" android:textColor="@color/text_primary" android:textStyle="bold"/>
-<TextView android:id="@+id/tvRestaurantAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="12sp" android:textColor="@color/text_secondary" android:layout_marginTop="4dp"/>
-<TextView android:id="@+id/tvRestaurantStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="12sp" android:textColor="@color/primary" android:layout_marginTop="4dp"/>
-<TextView android:id="@+id/tvRestaurantHours" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="11sp" android:textColor="@color/text_secondary" android:layout_marginTop="3dp"/>
-</LinearLayout>
-</LinearLayout></com.google.android.material.card.MaterialCardView>
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#EEE5F6"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="142dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp">
+
+        <!-- LEFT: Square restaurant photo -->
+        <FrameLayout
+            android:layout_width="116dp"
+            android:layout_height="116dp">
+
+            <ImageView
+                android:id="@+id/ivRestaurantPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/restaurant_photo_background"
+                android:clipToOutline="true"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_logo"
+                android:contentDescription="Restaurant photo" />
+
+            <View
+                android:id="@+id/restaurantPhotoDim"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvRestaurantPhotoStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@drawable/busy_pill"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvIllustrativePhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:text="Illustrative photo"
+                android:textSize="9sp"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+        <!-- RIGHT: Restaurant information -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvRestaurantName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Restaurant Name"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvRestaurantAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="Restaurant Address"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvRestaurantStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textSize="12sp"
+                android:textColor="@color/primary" />
+
+            <TextView
+                android:id="@+id/tvRestaurantHours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary" />
+
+            <!-- Favourite button at end -->
+            <ImageButton
+                android:id="@+id/btnFavourite"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:contentDescription="Save restaurant"
+                app:srcCompat="@drawable/ic_heart"
+                app:tint="@color/primary" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

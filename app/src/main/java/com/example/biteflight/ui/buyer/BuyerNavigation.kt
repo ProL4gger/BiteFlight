@@ -15,7 +15,7 @@ import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.ui.profile.EditProfileActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.biteflight.ui.FloatingNavigationBar
 import com.google.firebase.auth.FirebaseAuth
 
 object BuyerNavigation {
@@ -29,11 +29,11 @@ object BuyerNavigation {
             setBackgroundColor(ContextCompat.getColor(activity, R.color.background))
         }
         shell.addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
-        val navigation = BottomNavigationView(activity).apply {
-            setBackgroundColor(ContextCompat.getColor(activity, R.color.primary_light))
+        val navigation = FloatingNavigationBar(activity).apply {
+
             inflateMenu(R.menu.buyer_navigation)
-            labelVisibilityMode = 1
-            isItemHorizontalTranslationEnabled = false
+
+
             selectedItemId = selected
         }
         fun navigate(id: Int) {
@@ -59,7 +59,12 @@ object BuyerNavigation {
         }
         // Home also returns from a restaurant menu; Cart returns from checkout.
         navigation.setOnItemReselectedListener { navigate(it.itemId) }
-        shell.addView(navigation, LinearLayout.LayoutParams(-1, -2))
+        val density = activity.resources.displayMetrics.density
+        shell.clipChildren = false
+        shell.clipToPadding = false
+        shell.addView(navigation, LinearLayout.LayoutParams(-1, (80 * density).toInt()).apply {
+            setMargins((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
+        })
         content.addView(shell, ViewGroup.LayoutParams(-1, -1))
         ViewCompat.setOnApplyWindowInsetsListener(shell) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

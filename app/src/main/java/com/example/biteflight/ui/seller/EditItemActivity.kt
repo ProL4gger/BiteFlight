@@ -1,6 +1,12 @@
 package com.example.biteflight.ui.seller
 
 import android.os.Bundle
+import android.net.Uri
+import android.widget.ImageView
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.load
+import com.example.biteflight.utils.S3Uploader
+import com.example.biteflight.utils.Resource
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -14,6 +20,10 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.database.FirebaseDatabase
 
 class EditItemActivity : AppCompatActivity() {
+    private var replacementImageUrl: String? = null
+    private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) uploadItemPhoto(uri)
+    }
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -150,6 +160,18 @@ class EditItemActivity : AppCompatActivity() {
             findViewById<Button>(
                 R.id.btnSaveChanges
             )
+
+        replacementImageUrl = savedInstanceState?.getString("replacementImageUrl")
+        findViewById<ImageView>(R.id.ivMealImage).load(
+            (replacementImageUrl ?: intent.getStringExtra("imageUrl")).orEmpty().ifBlank { null }
+        ) {
+            placeholder(R.drawable.ic_logo)
+            fallback(R.drawable.ic_logo)
+            error(R.drawable.ic_logo)
+        }
+        findViewById<Button>(R.id.btnUploadMealImage).setOnClickListener {
+            selectImageLauncher.launch("image/*")
+        }
 
 
         // -------------------------
@@ -299,11 +321,14 @@ class EditItemActivity : AppCompatActivity() {
     ) {
 
         val updates =
-            mapOf<String, Any>(
+            mutableMapOf<String, Any>(
                 "name" to name,
                 "price" to price,
                 "tags" to tags
             )
+        replacementImageUrl?.let { updates["imageUrl"] = it }
+        findViewById<Button>(R.id.btnSaveChanges).isEnabled = false
+        findViewById<Button>(R.id.btnUploadMealImage).isEnabled = false
 
 
         FirebaseDatabase
@@ -324,6 +349,8 @@ class EditItemActivity : AppCompatActivity() {
             }
 
             .addOnFailureListener { error ->
+                findViewById<Button>(R.id.btnSaveChanges).isEnabled = true
+                findViewById<Button>(R.id.btnUploadMealImage).isEnabled = true
 
                 Toast.makeText(
                     this,
@@ -331,5 +358,39 @@ class EditItemActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             }
+    }
+
+    private fun uploadItemPhoto(uri: Uri) {
+        val upload = findViewById<Button>(R.id.btnUploadMealImage)
+        val save = findViewById<Button>(R.id.btnSaveChanges)
+        upload.isEnabled = false
+        save.isEnabled = false
+        S3Uploader.uploadImage(context = this, imageUri = uri, folderName = "meals") { result ->
+            if (isFinishing || isDestroyed) return@uploadImage
+            when (result) {
+                is Resource.Loading -> upload.text = "Uploading photo…"
+                is Resource.Success -> {
+                    replacementImageUrl = result.data
+                    findViewById<ImageView>(R.id.ivMealImage).load(result.data) {
+                        placeholder(R.drawable.ic_logo)
+                        error(R.drawable.ic_logo)
+                    }
+                    upload.text = "Replace item photo"
+                    upload.isEnabled = true
+                    save.isEnabled = true
+                }
+                is Resource.Error -> {
+                    upload.text = "Upload or replace item photo"
+                    upload.isEnabled = true
+                    save.isEnabled = true
+                    Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("replacementImageUrl", replacementImageUrl)
+        super.onSaveInstanceState(outState)
     }
 }

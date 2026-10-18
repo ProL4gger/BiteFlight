@@ -1,81 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:background="@color/background"
-    tools:ignore="HardcodedText">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="68dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="20dp"
-        android:paddingEnd="14dp"
-        android:background="@color/primary_light"
-        android:elevation="0dp">
-
-        <androidx.appcompat.widget.AppCompatImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Back"
-            android:padding="12dp"
-            app:srcCompat="@drawable/ic_back"
-            app:tint="@color/text_primary" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:text="BiteFlight."
-            android:textColor="@color/primary"
-            android:textSize="26sp"
-            android:textStyle="bold" />
-
-
-
-
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Good food.\nGreat mood." android:background="@drawable/studio_deep" android:padding="24dp"
-            android:textSize="34sp"
-            android:textStyle="bold"
-            android:textColor="@color/white" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:layout_marginBottom="20dp"
-            android:text="LOCAL KITCHENS · Find your next favourite"
-            android:textSize="15sp"
-            android:textColor="@color/text_secondary" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerRestaurants"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-    </LinearLayout>
-
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:focusableInTouchMode="true" android:background="@color/background">
+<LinearLayout android:layout_width="match_parent" android:layout_height="60dp" android:gravity="center_vertical" android:paddingStart="20dp" android:paddingEnd="12dp">
+<TextView android:id="@+id/tvAppName" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="BiteFlight." android:textSize="26sp" android:textStyle="bold" android:textColor="@color/primary"/>
+<androidx.appcompat.widget.AppCompatImageButton android:id="@+id/btnNotifications" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:padding="12dp" android:contentDescription="Order updates" app:srcCompat="@drawable/ic_bell" app:tint="@color/primary"/></LinearLayout>
+<androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="20dp">
+<TextView android:id="@+id/tvBuyerLocation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Set your delivery address  ⌄" android:textSize="12sp" android:textColor="@color/text_secondary" android:drawableStart="@drawable/ic_location" android:drawablePadding="6dp" android:minHeight="40dp" android:gravity="center_vertical" android:clickable="true" android:focusable="true"/>
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Good food.\nGreat mood." android:textSize="36sp" android:textColor="@color/primary" android:textStyle="bold" android:layout_marginTop="12dp" android:layout_marginBottom="20dp"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:background="@drawable/search_field" android:gravity="center_vertical" android:paddingStart="14dp">
+<ImageView android:layout_width="22dp" android:layout_height="22dp" android:src="@drawable/ic_search" android:importantForAccessibility="no"/>
+<EditText android:id="@+id/etRestaurantSearch" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="@null" android:paddingHorizontal="10dp" android:hint="Search restaurants, cuisines…" android:textSize="13sp" android:textColor="@color/text_primary" android:singleLine="true" android:inputType="text" android:imeOptions="actionSearch"/>
+<androidx.appcompat.widget.AppCompatImageButton android:id="@+id/btnRestaurantFilters" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:padding="12dp" android:contentDescription="Filter restaurants" app:srcCompat="@drawable/ic_filters" app:tint="@color/primary"/>
 </LinearLayout>
+<LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical">
+<TextView android:id="@+id/tvRestaurantHeading" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Discover kitchens" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_primary"/>
+<TextView android:id="@+id/btnSeeAll" android:layout_width="wrap_content" android:layout_height="match_parent" android:gravity="center" android:text="See all  ›" android:textSize="12sp" android:textColor="@color/primary" android:paddingHorizontal="8dp" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+<TextView android:id="@+id/tvRestaurantEmpty" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Loading restaurants…" android:textSize="14sp" android:textColor="@color/text_secondary" android:paddingVertical="24dp"/>
+<androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerRestaurants" android:layout_width="match_parent" android:layout_height="wrap_content" android:nestedScrollingEnabled="false" android:paddingBottom="8dp" android:clipToPadding="false"/>
+</LinearLayout></androidx.core.widget.NestedScrollView></LinearLayout>

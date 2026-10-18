@@ -13,6 +13,7 @@ import com.example.biteflight.utils.RestaurantAvailability
 
 class RestaurantAdapter(
     private val restaurants: List<User>,
+    private val onFavouriteChanged: () -> Unit = {},
     private val onRestaurantClick: (User) -> Unit
 ) : RecyclerView.Adapter<RestaurantAdapter.RestaurantViewHolder>() {
 
@@ -22,6 +23,9 @@ class RestaurantAdapter(
         val tvStatus: TextView = itemView.findViewById(R.id.tvRestaurantStatus)
         val photo: ImageView = itemView.findViewById(R.id.ivRestaurantPhoto)
         val photoStatus: TextView = itemView.findViewById(R.id.tvRestaurantPhotoStatus)
+        val photoDim: View = itemView.findViewById(R.id.restaurantPhotoDim)
+        val favourite: android.widget.ImageButton = itemView.findViewById(R.id.btnFavourite)
+        val illustrative: View = itemView.findViewById(R.id.tvIllustrativePhoto)
         val tvHours: TextView = itemView.findViewById(R.id.tvRestaurantHours)
 
         val tvRestaurantName: TextView =
@@ -69,6 +73,7 @@ class RestaurantAdapter(
         val availability = RestaurantAvailability.status(restaurant)
         val isOpen = availability == RestaurantAvailability.Status.OPEN
         holder.photoStatus.visibility = if (isOpen) View.GONE else View.VISIBLE
+        holder.photoDim.visibility = if (isOpen) View.GONE else View.VISIBLE
         holder.photoStatus.text = when (availability) {
             RestaurantAvailability.Status.BUSY -> "Busy"
             RestaurantAvailability.Status.CLOSED -> "Closed"
@@ -81,11 +86,21 @@ class RestaurantAdapter(
         }
         holder.tvStatus.visibility = if (isOpen) View.VISIBLE else View.GONE
         holder.tvHours.text = RestaurantAvailability.hours(restaurant)
-        holder.photo.load(restaurant.imageUrl.ifBlank { null }) {
-            placeholder(R.drawable.ic_logo)
-            error(R.drawable.ic_logo)
-            fallback(R.drawable.ic_logo)
+        val photoUrl = restaurant.imageUrl
+        val fallbackPhoto = R.drawable.ic_logo
+        holder.illustrative.visibility = View.GONE
+        holder.photo.load(photoUrl.ifBlank { null }) {
+            placeholder(fallbackPhoto)
+            error(fallbackPhoto)
+            fallback(fallbackPhoto)
             crossfade(true)
+        }
+        val saved = restaurant.uid in BuyerFavourites.ids(holder.itemView.context)
+        holder.favourite.setImageResource(if (saved) R.drawable.ic_heart_filled else R.drawable.ic_heart)
+        holder.favourite.contentDescription = if (saved) "Unsave ${restaurant.name}" else "Save ${restaurant.name}"
+        holder.favourite.setOnClickListener {
+            BuyerFavourites.toggle(holder.itemView.context, restaurant.uid)
+            onFavouriteChanged()
         }
 
         holder.itemView.setOnClickListener {

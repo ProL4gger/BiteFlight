@@ -106,6 +106,7 @@ class SellerMenuActivity : AppCompatActivity() {
                         ArrayList(meal.tags)
                     )
 
+                    intent.putExtra("imageUrl", meal.imageUrl)
                     startActivity(intent)
                 },
 

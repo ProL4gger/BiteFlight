@@ -39,6 +39,10 @@ class AddItemActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_item)
 
         auth = FirebaseAuth.getInstance()
+        uploadedImageUrl = savedInstanceState?.getString("uploadedImageUrl").orEmpty()
+        if (uploadedImageUrl.isNotBlank()) {
+            findViewById<ImageView>(R.id.ivMealImage).load(uploadedImageUrl)
+        }
 
         val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
@@ -111,17 +115,21 @@ class AddItemActivity : AppCompatActivity() {
         val ivMealImage = findViewById<ImageView>(R.id.ivMealImage)
         val btnUploadMealImage = findViewById<Button>(R.id.btnUploadMealImage)
 
+        findViewById<Button>(R.id.btnSaveItem).isEnabled = false
+        btnUploadMealImage.isEnabled = false
         S3Uploader.uploadImage(
             context = this,
             imageUri = uri,
             folderName = "meals"
         ) { resource ->
+            if (isFinishing || isDestroyed) return@uploadImage
             when (resource) {
                 is Resource.Loading -> {
                     btnUploadMealImage.isEnabled = false
                     Toast.makeText(this, "Uploading image to AWS S3...", Toast.LENGTH_SHORT).show()
                 }
                 is Resource.Success -> {
+                    findViewById<Button>(R.id.btnSaveItem).isEnabled = true
                     btnUploadMealImage.isEnabled = true
                     uploadedImageUrl = resource.data
                     ivMealImage.load(uploadedImageUrl) {
@@ -132,6 +140,7 @@ class AddItemActivity : AppCompatActivity() {
                     Toast.makeText(this, "Image uploaded to AWS S3 successfully!", Toast.LENGTH_SHORT).show()
                 }
                 is Resource.Error -> {
+                    findViewById<Button>(R.id.btnSaveItem).isEnabled = true
                     btnUploadMealImage.isEnabled = true
                     Toast.makeText(this, resource.message, Toast.LENGTH_LONG).show()
                 }
@@ -174,13 +183,22 @@ class AddItemActivity : AppCompatActivity() {
             imageUrl = imageUrl
         )
 
+        findViewById<Button>(R.id.btnSaveItem).isEnabled = false
+        findViewById<Button>(R.id.btnUploadMealImage).isEnabled = false
         database.child(itemId).setValue(meal)
             .addOnSuccessListener {
                 Toast.makeText(this, "Item added successfully", Toast.LENGTH_SHORT).show()
                 finish()
             }
             .addOnFailureListener { error ->
+                findViewById<Button>(R.id.btnSaveItem).isEnabled = true
+                findViewById<Button>(R.id.btnUploadMealImage).isEnabled = true
                 Toast.makeText(this, "Error: ${error.message}", Toast.LENGTH_LONG).show()
             }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("uploadedImageUrl", uploadedImageUrl)
+        super.onSaveInstanceState(outState)
     }
 }

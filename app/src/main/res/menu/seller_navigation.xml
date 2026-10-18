@@ -1,6 +1,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 <item android:id="@+id/sellerHome" android:title="Home" android:icon="@drawable/ic_seller_home"/>
-<item android:id="@+id/sellerMenu" android:title="Menu" android:icon="@drawable/ic_seller_menu"/>
+<item android:id="@+id/sellerMenu" android:title="Menu" android:icon="@drawable/ic_cutlery"/>
 <item android:id="@+id/sellerOrders" android:title="Orders" android:icon="@drawable/ic_seller_orders"/>
-<item android:id="@+id/sellerAvailability" android:title="Availability" android:icon="@drawable/ic_seller_clock"/>
+<item android:id="@+id/sellerAvailability" android:title="Availability" android:icon="@drawable/ic_calendar"/>
 </menu>

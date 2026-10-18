@@ -9,7 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.example.biteflight.R
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.biteflight.ui.FloatingNavigationBar
 
 object SellerNavigation {
     fun attach(activity: AppCompatActivity, selected: Int) {
@@ -22,11 +22,11 @@ object SellerNavigation {
             setBackgroundColor(ContextCompat.getColor(activity, R.color.background))
         }
         shell.addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
-        val navigation = BottomNavigationView(activity).apply {
-            setBackgroundColor(ContextCompat.getColor(activity, R.color.primary_light))
+        val navigation = FloatingNavigationBar(activity).apply {
+
             inflateMenu(R.menu.seller_navigation)
-            labelVisibilityMode = 1
-            isItemHorizontalTranslationEnabled = false
+
+
             selectedItemId = selected
             setOnItemSelectedListener { item ->
                 if (item.itemId == selected) return@setOnItemSelectedListener true
@@ -43,7 +43,12 @@ object SellerNavigation {
                 false
             }
         }
-        shell.addView(navigation, LinearLayout.LayoutParams(-1, -2))
+        val density = activity.resources.displayMetrics.density
+        shell.clipChildren = false
+        shell.clipToPadding = false
+        shell.addView(navigation, LinearLayout.LayoutParams(-1, (80 * density).toInt()).apply {
+            setMargins((12 * density).toInt(), (8 * density).toInt(), (12 * density).toInt(), (10 * density).toInt())
+        })
         content.addView(shell, ViewGroup.LayoutParams(-1, -1))
         ViewCompat.setOnApplyWindowInsetsListener(shell) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())

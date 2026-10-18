@@ -20,11 +20,11 @@ class SellerDashboardActivity : AppCompatActivity() {
         setContentView(R.layout.activity_seller_dashboard)
         SellerNavigation.attach(this, R.id.sellerHome)
 
-        val btnBack = findViewById<ImageButton>(R.id.btnBack)
-        val btnAddItem = findViewById<TextView>(R.id.btnAddItem)
-        val btnMenu = findViewById<TextView>(R.id.btnMenu)
+
+        val btnAddItem = findViewById<android.view.View>(R.id.btnAddItem)
+        val btnMenu = findViewById<android.view.View>(R.id.btnMenu)
         val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
-        findViewById<TextView>(R.id.btnOrders).setOnClickListener {
+        findViewById<android.view.View>(R.id.btnOrders).setOnClickListener {
             startActivity(Intent(this, SellerOrdersActivity::class.java))
         }
 
@@ -33,9 +33,7 @@ class SellerDashboardActivity : AppCompatActivity() {
         // BACK BUTTON
         // -------------------------
 
-        btnBack.setOnClickListener {
-            onBackPressedDispatcher.onBackPressed()
-        }
+        findViewById<ImageButton>(R.id.btnNotifications).setOnClickListener { startActivity(Intent(this, SellerOrdersActivity::class.java)) }
 
 
         // -------------------------

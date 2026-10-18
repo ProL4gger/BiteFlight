@@ -39,7 +39,7 @@
                 android:id="@+id/ivMealImage"
                 android:layout_width="match_parent"
                 android:layout_height="180dp"
-                android:scaleType="centerCrop"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_logo"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
                 android:layout_marginBottom="12dp"/>

@@ -5,6 +5,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.ImageView
+import coil.load
 import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Meal
@@ -19,6 +21,7 @@ class MealAdapter(
         itemView: View
     ) : RecyclerView.ViewHolder(itemView) {
 
+        val photo: ImageView = itemView.findViewById(R.id.ivMealPhoto)
         val tvMealName: TextView =
             itemView.findViewById(R.id.tvMealName)
 
@@ -60,6 +63,13 @@ class MealAdapter(
         val meal =
             meals[position]
 
+        holder.photo.contentDescription = "Photo of " + meal.name
+        holder.photo.load(meal.imageUrl.ifBlank { null }) {
+            placeholder(R.drawable.ic_logo)
+            error(R.drawable.ic_logo)
+            fallback(R.drawable.ic_logo)
+            crossfade(true)
+        }
         holder.tvMealName.text =
             meal.name
 

@@ -1,0 +1,13 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background">
+<include layout="@layout/view_top_bar"/>
+<ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp">
+<TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Your kitchen.\nYour hours." android:textSize="32sp" android:textStyle="bold" android:textColor="@color/primary" android:background="@drawable/studio_soft" android:padding="24dp"/>
+<com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/switchBusy" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:layout_marginTop="24dp" android:text="Busy — pause new orders" android:textColor="@color/text_primary"/>
+<TextView android:id="@+id/tvHoursHelp" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Loading restaurant availability…" android:textColor="@color/text_secondary" android:layout_marginBottom="20dp"/>
+<Button android:id="@+id/btnOpeningTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Set opening time"/>
+<Button android:id="@+id/btnClosingTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Set closing time"/>
+<Button android:id="@+id/btnSaveAvailability" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="Save availability"/>
+<ProgressBar android:id="@+id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:layout_marginTop="16dp"/>
+</LinearLayout></ScrollView></LinearLayout>

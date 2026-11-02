@@ -1,4 +1,3 @@
-
 package com.example.biteflight.ui.seller
 
 import android.net.Uri
@@ -18,7 +17,12 @@ import com.example.biteflight.R
 import com.example.biteflight.utils.Resource
 import com.example.biteflight.utils.S3Uploader
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class EditItemActivity : AppCompatActivity() {
 
@@ -50,7 +54,8 @@ class EditItemActivity : AppCompatActivity() {
             return
         }
 
-        val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
+        val toolbar =
+            findViewById<MaterialToolbar>(R.id.topToolbar)
 
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { view, insets ->
             val statusBarInsets = insets.getInsets(
@@ -65,12 +70,22 @@ class EditItemActivity : AppCompatActivity() {
         supportActionBar?.title = "Edit Item"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val etMealName = findViewById<EditText>(R.id.etMealName)
-        val etPrice = findViewById<EditText>(R.id.etPrice)
-        val etCustomTags = findViewById<EditText>(R.id.etCustomTags)
+        val etMealName =
+            findViewById<EditText>(R.id.etMealName)
+
+        val etPrice =
+            findViewById<EditText>(R.id.etPrice)
+
+        // NEW: Stock input
+        val etStockQuantity =
+            findViewById<EditText>(R.id.etStockQuantity)
+
+        val etCustomTags =
+            findViewById<EditText>(R.id.etCustomTags)
 
         val btnSaveChanges =
             findViewById<Button>(R.id.btnSaveChanges)
+
         val btnUploadMealImage =
             findViewById<Button>(R.id.btnUploadMealImage)
 
@@ -92,7 +107,6 @@ class EditItemActivity : AppCompatActivity() {
             selectImageLauncher.launch("image/*")
         }
 
-        // Load original item data
         if (savedInstanceState == null) {
             etMealName.setText(originalName)
             etPrice.setText(originalPrice.toString())
@@ -114,7 +128,6 @@ class EditItemActivity : AppCompatActivity() {
                     }
             }
 
-            // Restore custom tags from Firebase item
             val knownNames = predefinedTags.map { it.second }
 
             val customTags = originalTags.filter { tag ->
@@ -126,9 +139,90 @@ class EditItemActivity : AppCompatActivity() {
             etCustomTags.setText(customTags.joinToString(", "))
         }
 
+        // NEW: Load current stock from Firebase.
+        // Disable saving until the quantity has been loaded.
+        val itemReference = FirebaseDatabase.getInstance()
+            .getReference("menuItems")
+            .child(itemId)
+
+        btnSaveChanges.isEnabled = false
+
+        itemReference.addListenerForSingleValueEvent(
+            object : ValueEventListener {
+
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (isFinishing || isDestroyed) return
+
+                    if (!snapshot.exists()) {
+                        Toast.makeText(
+                            this@EditItemActivity,
+                            "Item no longer exists",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                        return
+                    }
+
+                    val currentSellerId =
+                        FirebaseAuth.getInstance().currentUser?.uid
+
+                    val itemSellerId =
+                        snapshot.child("sellerId")
+                            .getValue(String::class.java)
+
+                    if (currentSellerId == null ||
+                        currentSellerId != itemSellerId
+                    ) {
+                        Toast.makeText(
+                            this@EditItemActivity,
+                            "You cannot edit this item",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                        return
+                    }
+
+                    // Do not overwrite a restored form after rotation.
+                    if (savedInstanceState == null) {
+                        val stock =
+                            snapshot.child("stockQuantity")
+                                .getValue(Int::class.java)
+
+                        // Existing items may not have stockQuantity.
+                        // Leave blank until the seller assigns stock.
+                        etStockQuantity.setText(
+                            stock?.toString().orEmpty()
+                        )
+                    }
+
+                    btnSaveChanges.isEnabled = true
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    if (isFinishing || isDestroyed) return
+
+                    Toast.makeText(
+                        this@EditItemActivity,
+                        "Could not load stock: ${error.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        )
+
         btnSaveChanges.setOnClickListener {
-            val newName = etMealName.text.toString().trim()
-            val newPrice = etPrice.text.toString().trim().toDoubleOrNull()
+
+            val newName =
+                etMealName.text.toString().trim()
+
+            val newPrice =
+                etPrice.text.toString().trim().toDoubleOrNull()
+
+            // NEW: Read stock quantity
+            val newStockQuantity =
+                etStockQuantity.text.toString()
+                    .trim()
+                    .toIntOrNull()
 
             val newTags = collectTags()
 
@@ -156,6 +250,13 @@ class EditItemActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // NEW: Validate stock quantity
+            if (newStockQuantity == null || newStockQuantity < 0) {
+                etStockQuantity.error =
+                    "Enter a valid stock quantity"
+                return@setOnClickListener
+            }
+
             if (uniqueTags.isEmpty()) {
                 Toast.makeText(
                     this,
@@ -169,6 +270,7 @@ class EditItemActivity : AppCompatActivity() {
                 itemId = itemId,
                 name = newName,
                 price = newPrice,
+                stockQuantity = newStockQuantity,
                 tags = uniqueTags
             )
         }
@@ -200,11 +302,13 @@ class EditItemActivity : AppCompatActivity() {
         itemId: String,
         name: String,
         price: Double,
+        stockQuantity: Int,
         tags: List<String>
     ) {
         val updates = mutableMapOf<String, Any>(
             "name" to name,
             "price" to price,
+            "stockQuantity" to stockQuantity,
             "tags" to tags
         )
 
@@ -212,12 +316,32 @@ class EditItemActivity : AppCompatActivity() {
             updates["imageUrl"] = it
         }
 
-        val btnSave = findViewById<Button>(R.id.btnSaveChanges)
-        val btnUpload = findViewById<Button>(R.id.btnUploadMealImage)
+        val btnSave =
+            findViewById<Button>(R.id.btnSaveChanges)
+
+        val btnUpload =
+            findViewById<Button>(R.id.btnUploadMealImage)
 
         btnSave.isEnabled = false
         btnUpload.isEnabled = false
 
+        val currentUid =
+            FirebaseAuth.getInstance().currentUser?.uid
+
+        if (currentUid == null) {
+            btnSave.isEnabled = true
+            btnUpload.isEnabled = true
+
+            Toast.makeText(
+                this,
+                "Seller is not logged in",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // The UI checks ownership, but Firebase rules
+        // must enforce it for real security.
         FirebaseDatabase.getInstance()
             .getReference("menuItems")
             .child(itemId)
@@ -243,8 +367,11 @@ class EditItemActivity : AppCompatActivity() {
     }
 
     private fun uploadItemPhoto(uri: Uri) {
-        val upload = findViewById<Button>(R.id.btnUploadMealImage)
-        val save = findViewById<Button>(R.id.btnSaveChanges)
+        val upload =
+            findViewById<Button>(R.id.btnUploadMealImage)
+
+        val save =
+            findViewById<Button>(R.id.btnSaveChanges)
 
         upload.isEnabled = false
         save.isEnabled = false
@@ -254,6 +381,7 @@ class EditItemActivity : AppCompatActivity() {
             imageUri = uri,
             folderName = "meals"
         ) { result ->
+
             if (isFinishing || isDestroyed) return@uploadImage
 
             when (result) {
@@ -296,7 +424,10 @@ class EditItemActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putString("replacementImageUrl", replacementImageUrl)
+        outState.putString(
+            "replacementImageUrl",
+            replacementImageUrl
+        )
         super.onSaveInstanceState(outState)
     }
 }

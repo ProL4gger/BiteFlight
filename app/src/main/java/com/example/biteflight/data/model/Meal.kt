@@ -3,6 +3,7 @@ package com.example.biteflight.data.model
 data class Meal(
     val id: String = "",
     val name: String = "",
+    val stockQuantity: Int = 0,
     val price: Double = 0.0,
     val tags: List<String> = emptyList(),
     val sellerId: String = "",

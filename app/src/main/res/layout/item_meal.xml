@@ -30,6 +30,17 @@
         android:textColor="@color/text_primary" />
 
     <TextView
+        android:id="@+id/tvMealStock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Available: 0"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary" />
+
+
+    <TextView
         android:id="@+id/tvMealPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -13,6 +13,13 @@ object CartManager {
     var restaurantName: String? = null
         private set
 
+    enum class AddResult {
+        SUCCESS,
+        OUT_OF_STOCK,
+        NOT_ENOUGH_STOCK,
+        DIFFERENT_RESTAURANT
+    }
+
     fun getItems(): MutableList<CartItem> {
         return cartItems
     }
@@ -25,23 +32,39 @@ object CartManager {
         return restaurantId == null || restaurantId == sellerId
     }
 
+    fun getQuantityForMeal(mealId: String): Int {
+        return cartItems.find {
+            it.meal.id == mealId
+        }?.quantity ?: 0
+    }
+
+    // Add one item, respecting the latest stock quantity.
     fun addItem(
         meal: Meal,
         sellerId: String,
         restaurantName: String
-    ) {
+    ): AddResult {
 
-        if (cartItems.isEmpty()) {
-            restaurantId = sellerId
-            this.restaurantName = restaurantName
+        if (!canAddFromRestaurant(sellerId)) {
+            return AddResult.DIFFERENT_RESTAURANT
         }
 
-        val existingItem =
-            cartItems.find {
-                it.meal.id == meal.id
+        if (meal.stockQuantity <= 0) {
+            return AddResult.OUT_OF_STOCK
+        }
+
+        val existingItem = cartItems.find {
+            it.meal.id == meal.id
+        }
+
+        if (existingItem != null) {
+
+            if (existingItem.quantity >= meal.stockQuantity) {
+                return AddResult.NOT_ENOUGH_STOCK
             }
 
-        if (existingItem == null) {
+            existingItem.quantity++
+        } else {
 
             cartItems.add(
                 CartItem(
@@ -50,13 +73,61 @@ object CartManager {
                 )
             )
         }
+
+        if (cartItems.size == 1) {
+            restaurantId = sellerId
+            this.restaurantName = restaurantName
+        }
+
+        return AddResult.SUCCESS
     }
 
-    fun increaseQuantity(position: Int) {
+    // Increase quantity using stock information already in cart.
+    // Firebase should be checked before calling this function.
+    fun increaseQuantity(position: Int): AddResult {
 
-        if (position in cartItems.indices) {
-            cartItems[position].quantity++
+        if (position !in cartItems.indices) {
+            return AddResult.NOT_ENOUGH_STOCK
         }
+
+        val item = cartItems[position]
+
+        if (item.meal.stockQuantity <= 0) {
+            return AddResult.OUT_OF_STOCK
+        }
+
+        if (item.quantity >= item.meal.stockQuantity) {
+            return AddResult.NOT_ENOUGH_STOCK
+        }
+
+        item.quantity++
+
+        return AddResult.SUCCESS
+    }
+
+    // Use this after checking the latest stock in Firebase.
+    fun increaseQuantity(
+        position: Int,
+        latestStock: Int
+    ): AddResult {
+
+        if (position !in cartItems.indices) {
+            return AddResult.NOT_ENOUGH_STOCK
+        }
+
+        val item = cartItems[position]
+
+        if (latestStock <= 0) {
+            return AddResult.OUT_OF_STOCK
+        }
+
+        if (item.quantity >= latestStock) {
+            return AddResult.NOT_ENOUGH_STOCK
+        }
+
+        item.quantity++
+
+        return AddResult.SUCCESS
     }
 
     fun decreaseQuantity(position: Int) {
@@ -66,11 +137,8 @@ object CartManager {
         }
 
         if (cartItems[position].quantity > 1) {
-
             cartItems[position].quantity--
-
         } else {
-
             cartItems.removeAt(position)
 
             if (cartItems.isEmpty()) {
@@ -91,16 +159,13 @@ object CartManager {
     }
 
     fun getTotal(): Double {
-
         return cartItems.sumOf {
             it.meal.price * it.quantity
         }
     }
 
     fun clearCart() {
-
         cartItems.clear()
-
         restaurantId = null
         restaurantName = null
     }

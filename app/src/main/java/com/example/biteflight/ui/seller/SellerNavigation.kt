@@ -10,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.example.biteflight.R
 import com.example.biteflight.ui.FloatingNavigationBar
+import com.example.biteflight.ui.SwipeNavigationLayout
 import com.example.biteflight.ui.profile.EditProfileActivity
 
 object SellerNavigation {
@@ -18,11 +19,25 @@ object SellerNavigation {
         val page = content.getChildAt(0)
         content.removeView(page)
         page.fitsSystemWindows = false
-        val shell = LinearLayout(activity).apply {
+        val shell = SwipeNavigationLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(ContextCompat.getColor(activity, R.color.background))
         }
         shell.addView(page, LinearLayout.LayoutParams(-1, 0, 1f))
+        fun navigate(id: Int) {
+            val destination = when (id) {
+                R.id.sellerMenu -> SellerMenuActivity::class.java
+                R.id.sellerOrders -> SellerOrdersActivity::class.java
+                R.id.sellerAvailability -> SellerAvailabilityActivity::class.java
+                R.id.sellerProfile -> EditProfileActivity::class.java
+                else -> SellerDashboardActivity::class.java
+            }
+            if (activity.javaClass == destination) return
+            activity.startActivity(Intent(activity, destination).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            })
+            if (activity !is SellerDashboardActivity) activity.finish()
+        }
         val navigation = FloatingNavigationBar(activity).apply {
 
             inflateMenu(R.menu.seller_navigation)
@@ -31,19 +46,18 @@ object SellerNavigation {
             selectedItemId = selected
             setOnItemSelectedListener { item ->
                 if (item.itemId == selected) return@setOnItemSelectedListener true
-                val destination = when (item.itemId) {
-                    R.id.sellerMenu -> SellerMenuActivity::class.java
-                    R.id.sellerOrders -> SellerOrdersActivity::class.java
-                    R.id.sellerAvailability -> SellerAvailabilityActivity::class.java
-                    R.id.sellerProfile -> EditProfileActivity::class.java
-                    else -> SellerDashboardActivity::class.java
-                }
-                activity.startActivity(Intent(activity, destination).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                })
-                if (activity !is SellerDashboardActivity) activity.finish()
+                navigate(item.itemId)
                 false
             }
+        }
+        val swipePages = listOf(R.id.sellerMenu, R.id.sellerOrders, R.id.sellerHome,
+            R.id.sellerAvailability, R.id.sellerProfile)
+        val isMainPage = activity is SellerMenuActivity || activity is SellerOrdersActivity ||
+            activity is SellerDashboardActivity || activity is SellerAvailabilityActivity ||
+            activity is EditProfileActivity
+        if (isMainPage) shell.enablePageSwipes(page) { next ->
+            val index = swipePages.indexOf(selected)
+            if (index >= 0) swipePages.getOrNull(index + if (next) 1 else -1)?.let { navigate(it) }
         }
         val density = activity.resources.displayMetrics.density
         shell.clipChildren = false

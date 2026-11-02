@@ -44,9 +44,11 @@ class AuthRepository(
 
                 val userWithUid = user.copy(uid = firebaseUser.uid)
 
-                database.getReference("users")
-                    .child(firebaseUser.uid)
-                    .setValue(userWithUid)
+                val registration = mutableMapOf<String, Any>("users/${firebaseUser.uid}" to userWithUid)
+                if (userWithUid.role == User.ROLE_SELLER) {
+                    registration["restaurants/${firebaseUser.uid}"] = RestaurantProfiles.publicFields(userWithUid)
+                }
+                database.reference.updateChildren(registration)
                     .addOnCompleteListener { dbTask ->
                         if (dbTask.isSuccessful) {
                             onResult(Resource.Success(firebaseUser))
@@ -149,10 +151,14 @@ class AuthRepository(
                 user.deliveryAddressDetails
         }
 
-        database.getReference("users")
-            .child(user.uid)
-            .updateChildren(updates)
-            .addOnCompleteListener { task ->
+        val saveTask = if (user.role == User.ROLE_SELLER) {
+            RestaurantProfiles.updateSeller(user.uid, updates, mapOf(
+                "name" to user.name, "address" to user.address, "imageUrl" to user.imageUrl
+            ))
+        } else {
+            database.getReference("users").child(user.uid).updateChildren(updates)
+        }
+        saveTask.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     onResult(Resource.Success(Unit))
                 } else {

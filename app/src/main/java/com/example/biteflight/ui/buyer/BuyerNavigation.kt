@@ -16,6 +16,7 @@ import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.ui.profile.EditProfileActivity
 import com.example.biteflight.ui.FloatingNavigationBar
+import com.example.biteflight.ui.SwipeNavigationLayout
 import com.google.firebase.auth.FirebaseAuth
 
 object BuyerNavigation {
@@ -24,7 +25,7 @@ object BuyerNavigation {
         val page = content.getChildAt(0)
         content.removeView(page)
         page.fitsSystemWindows = false
-        val shell = LinearLayout(activity).apply {
+        val shell = SwipeNavigationLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(ContextCompat.getColor(activity, R.color.background))
         }
@@ -59,6 +60,14 @@ object BuyerNavigation {
         }
         // Home also returns from a restaurant menu; Cart returns from checkout.
         navigation.setOnItemReselectedListener { navigate(it.itemId) }
+        // Settings is a popup, not a page. Detail/checkout screens retain their own gestures.
+        val swipePages = listOf(R.id.buyerCart, R.id.buyerOrders, R.id.buyerHome, R.id.buyerProfile)
+        val isMainPage = activity is CartActivity || activity is BuyerOrdersActivity ||
+            activity is MainActivity || activity is EditProfileActivity
+        if (isMainPage) shell.enablePageSwipes(page) { next ->
+            val index = swipePages.indexOf(selected)
+            if (index >= 0) swipePages.getOrNull(index + if (next) 1 else -1)?.let { navigate(it) }
+        }
         val density = activity.resources.displayMetrics.density
         shell.clipChildren = false
         shell.clipToPadding = false

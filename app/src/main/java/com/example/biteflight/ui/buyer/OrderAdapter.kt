@@ -78,7 +78,7 @@ class OrderAdapter(
             }
 
         holder.tvTotal.text =
-            "Total: EGP ${order.total}"
+            "Total: EGP ${order.calculatedTotal}"
 
         holder.tvStatus.text =
             "Status: ${order.status}"

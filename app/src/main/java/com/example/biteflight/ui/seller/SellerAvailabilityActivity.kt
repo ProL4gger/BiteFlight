@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.model.User
+import com.example.biteflight.data.repository.RestaurantProfiles
 import com.example.biteflight.databinding.ActivitySellerAvailabilityBinding
 import com.example.biteflight.utils.RestaurantAvailability
 import com.google.android.material.appbar.MaterialToolbar
@@ -94,9 +95,10 @@ class SellerAvailabilityActivity : AppCompatActivity() {
             return
         }
         enableControls(false)
-        FirebaseDatabase.getInstance().getReference("users").child(sellerId).updateChildren(
-            mapOf("busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing)
-        ).addOnCompleteListener { task ->
+        val changes: Map<String, Any> = mapOf(
+            "busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing
+        )
+        RestaurantProfiles.updateSeller(sellerId, changes, changes).addOnCompleteListener { task ->
             if (isFinishing || isDestroyed) return@addOnCompleteListener
             enableControls(true)
             Toast.makeText(this, if (task.isSuccessful) "Availability saved" else

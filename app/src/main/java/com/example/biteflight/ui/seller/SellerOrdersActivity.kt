@@ -85,9 +85,7 @@ class SellerOrdersActivity : AppCompatActivity() {
                 ) {
 
                     val order =
-                        orderSnapshot.getValue(
-                            Order::class.java
-                        )
+                        Order.fromSnapshot(orderSnapshot)
 
                     if (order != null) {
                         orderList.add(order)

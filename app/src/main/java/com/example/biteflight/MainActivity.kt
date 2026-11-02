@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: RestaurantAdapter
     private val database = FirebaseDatabase.getInstance()
     private var usersListener: ValueEventListener? = null
+    private var profileListener: ValueEventListener? = null
+    private var profileReference: DatabaseReference? = null
     private var mealsListener: ValueEventListener? = null
     private var openOnly = false
     private var favouritesOnly = false
@@ -91,10 +93,6 @@ class MainActivity : AppCompatActivity() {
                     if (user.role.equals(User.ROLE_SELLER, true)) {
                         allRestaurants.add(user.copy(uid = child.key ?: continue))
                     }
-                    if (child.key == FirebaseAuth.getInstance().currentUser?.uid) {
-                        findViewById<TextView>(R.id.tvBuyerLocation).text =
-                            user.address.ifBlank { "Set your delivery address" } + "  ⌄"
-                    }
                 }
                 loaded = true; loadError = null
                 filterRestaurants()
@@ -117,13 +115,30 @@ class MainActivity : AppCompatActivity() {
                 filterRestaurants()
             }
         }
-        database.getReference("users").addValueEventListener(usersListener!!)
+        database.getReference("restaurants").addValueEventListener(usersListener!!)
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            profileReference = database.getReference("users").child(uid).child("address")
+            profileListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    findViewById<TextView>(R.id.tvBuyerLocation).text =
+                        snapshot.getValue(String::class.java).orEmpty()
+                            .ifBlank { "Set your delivery address" } + "  ⌄"
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    findViewById<TextView>(R.id.tvBuyerLocation).text = "Delivery address unavailable"
+                }
+            }
+            profileReference?.addValueEventListener(profileListener!!)
+        }
         database.getReference("menuItems").addValueEventListener(mealsListener!!)
         handler.post(refresh)
     }
 
     override fun onStop() {
-        usersListener?.let { database.getReference("users").removeEventListener(it) }
+        usersListener?.let { database.getReference("restaurants").removeEventListener(it) }
+        profileListener?.let { profileReference?.removeEventListener(it) }
+        profileListener = null
+        profileReference = null
         mealsListener?.let { database.getReference("menuItems").removeEventListener(it) }
         handler.removeCallbacks(refresh)
         super.onStop()

@@ -6,6 +6,7 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.R
+import com.example.biteflight.data.repository.RestaurantProfiles
 import com.example.biteflight.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 
@@ -18,6 +19,11 @@ class SellerDashboardActivity : AppCompatActivity() {
 
         // Seller bottom navigation
         SellerNavigation.attach(this, R.id.sellerHome)
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            RestaurantProfiles.ensurePublished(uid).addOnFailureListener {
+                Toast.makeText(this, "Could not publish restaurant details. Please reopen this page to retry.", Toast.LENGTH_LONG).show()
+            }
+        }
 
         val btnAddItem =
             findViewById<android.view.View>(R.id.btnAddItem)

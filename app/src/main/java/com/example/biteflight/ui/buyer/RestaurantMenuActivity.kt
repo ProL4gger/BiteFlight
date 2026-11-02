@@ -75,14 +75,14 @@ class RestaurantMenuActivity : AppCompatActivity() {
             }
         }
         statusListener = listener
-        FirebaseDatabase.getInstance().getReference("users").child(sellerId)
+        FirebaseDatabase.getInstance().getReference("restaurants").child(sellerId)
             .addValueEventListener(listener)
     }
 
     override fun onStop() {
         val sellerId = intent.getStringExtra("sellerId")
         if (sellerId != null) statusListener?.let {
-            FirebaseDatabase.getInstance().getReference("users").child(sellerId)
+            FirebaseDatabase.getInstance().getReference("restaurants").child(sellerId)
                 .removeEventListener(it)
         }
         statusListener = null

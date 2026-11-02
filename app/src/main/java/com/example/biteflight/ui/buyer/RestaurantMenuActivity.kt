@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
 import com.example.biteflight.data.model.Meal
@@ -286,14 +287,12 @@ class RestaurantMenuActivity : AppCompatActivity() {
     // -------------------------
 
     private fun openCart() {
-
-        val intent =
-            Intent(
-                this,
-                CartActivity::class.java
-            )
-
+        val intent = Intent(this, MainActivity::class.java).apply {
+            putExtra("targetTab", 1) // Cart tab is at index 1 [Home, Cart, Orders, Profile]
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
         startActivity(intent)
+        finish()
     }
 
     // -------------------------

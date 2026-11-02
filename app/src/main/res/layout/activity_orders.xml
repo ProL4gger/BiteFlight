@@ -18,6 +18,9 @@
         android:layout_weight="1"
         android:scrollbars="vertical"
         android:clipToPadding="false"
-        android:padding="20dp" />
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="130dp" />
 
 </LinearLayout>

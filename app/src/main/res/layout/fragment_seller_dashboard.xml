@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/background">
+
+<androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:clipToPadding="false" android:paddingBottom="130dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:layout_marginTop="12dp">
+<TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Your kitchen.\nYour rules." android:textSize="32sp" android:textStyle="bold" android:textColor="@color/primary"/>
+<LinearLayout android:id="@+id/btnAddItem" android:layout_width="80dp" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:clickable="true" android:focusable="true" android:contentDescription="Add a meal">
+    <TextView android:layout_width="64dp" android:layout_height="64dp" android:background="@drawable/nav_active" android:gravity="center" android:text="+" android:textSize="34sp" android:textColor="@color/white" android:importantForAccessibility="no"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Add a meal" android:textSize="12sp" android:textColor="@color/primary" android:importantForAccessibility="no"/>
+</LinearLayout>
+</LinearLayout>
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Cook. List. Earn. On your terms." android:textSize="15sp" android:textColor="@color/text_secondary" android:layout_marginTop="12dp" android:layout_marginBottom="26dp"/>
+<FrameLayout android:id="@+id/btnMenu" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/card_menu_gradient" android:clipToOutline="true" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:layout_marginBottom="14dp">
+<ImageView android:layout_width="190dp" android:layout_height="230dp" android:layout_gravity="end|center_vertical" android:translationX="45dp" android:rotation="0" android:src="@drawable/food_bowl" android:scaleType="fitCenter" android:importantForAccessibility="no"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="22dp" android:paddingEnd="130dp" android:orientation="vertical">
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Made\nby you." android:textSize="34sp" android:textColor="@color/white" android:textStyle="bold"/>
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Turn your food\ninto opportunity." android:textSize="14sp" android:textColor="@color/primary_light" android:layout_marginTop="10dp"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:background="@drawable/white_pill" android:text="Manage menu  →" android:textColor="@color/primary" android:textSize="13sp"/>
+</LinearLayout></FrameLayout>
+<FrameLayout android:id="@+id/btnOrders" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/card_order_gradient" android:clipToOutline="true" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground" android:layout_marginBottom="14dp">
+<ImageView android:layout_width="190dp" android:layout_height="230dp" android:layout_gravity="end|center_vertical" android:translationX="45dp" android:rotation="12" android:src="@drawable/illustration_order" android:scaleType="fitCenter" android:importantForAccessibility="no"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="22dp" android:paddingEnd="130dp" android:orientation="vertical">
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Order\nbook." android:textSize="34sp" android:textColor="@color/primary" android:textStyle="bold"/>
+<TextView  android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Keep track. Stay ahead." android:textSize="14sp" android:textColor="@color/text_secondary" android:layout_marginTop="10dp"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:paddingHorizontal="16dp" android:paddingVertical="12dp" android:background="@drawable/white_pill" android:text="View orders  →" android:textColor="@color/primary" android:textSize="13sp"/>
+</LinearLayout></FrameLayout>
+</LinearLayout></androidx.core.widget.NestedScrollView></LinearLayout>

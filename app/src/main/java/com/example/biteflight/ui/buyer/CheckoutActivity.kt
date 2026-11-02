@@ -7,6 +7,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
 import com.example.biteflight.data.model.Order
@@ -333,11 +334,13 @@ class CheckoutActivity : AppCompatActivity() {
                 val intent =
                     Intent(
                         this,
-                        BuyerOrdersActivity::class.java
+                        MainActivity::class.java
                     )
 
+                intent.putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
+
                 intent.flags =
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
 
                 startActivity(intent)
 

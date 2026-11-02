@@ -2,161 +2,89 @@ package com.example.biteflight
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.doAfterTextChanged
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.biteflight.data.model.Meal
-import com.example.biteflight.data.model.User
-import com.example.biteflight.ui.buyer.*
-import com.example.biteflight.ui.profile.EditProfileActivity
-import com.example.biteflight.utils.RestaurantAvailability
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import androidx.viewpager2.widget.ViewPager2
+import com.example.biteflight.ui.auth.LoginActivity
+import com.example.biteflight.ui.buyer.BuyerNavigation
+import com.example.biteflight.ui.buyer.BuyerPagerAdapter
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
 
 class MainActivity : AppCompatActivity() {
-    private val allRestaurants = mutableListOf<User>()
-    private val visibleRestaurants = mutableListOf<User>()
-    private val meals = mutableListOf<Meal>()
-    private lateinit var adapter: RestaurantAdapter
-    private val database = FirebaseDatabase.getInstance()
-    private var usersListener: ValueEventListener? = null
-    private var mealsListener: ValueEventListener? = null
-    private var openOnly = false
-    private var favouritesOnly = false
-    private var loaded = false
-    private var loadError: String? = null
-    private val handler = Handler(Looper.getMainLooper())
-    private val refresh = object : Runnable {
-        override fun run() {
-            filterRestaurants()
-            handler.postDelayed(this, 60_000L - System.currentTimeMillis() % 60_000L)
-        }
-    }
+
+    private lateinit var viewPager: ViewPager2
+    private lateinit var pagerAdapter: BuyerPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        BuyerNavigation.attach(this, R.id.buyerHome)
-        openOnly = savedInstanceState?.getBoolean("openOnly") ?: false
-        favouritesOnly = savedInstanceState?.getBoolean("favouritesOnly") ?: false
-        adapter = RestaurantAdapter(visibleRestaurants, { filterRestaurants() }) { restaurant ->
-            startActivity(Intent(this, RestaurantMenuActivity::class.java)
-                .putExtra("sellerId", restaurant.uid).putExtra("restaurantName", restaurant.name))
-        }
-        findViewById<RecyclerView>(R.id.recyclerRestaurants).apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = this@MainActivity.adapter
-        }
-        findViewById<EditText>(R.id.etRestaurantSearch).apply {
-            setText(savedInstanceState?.getString("query") ?: "")
-            doAfterTextChanged { filterRestaurants() }
-        }
-        findViewById<ImageButton>(R.id.btnNotifications).setOnClickListener {
-            startActivity(Intent(this, BuyerOrdersActivity::class.java))
-        }
-        findViewById<TextView>(R.id.tvBuyerLocation).setOnClickListener {
-            startActivity(Intent(this, EditProfileActivity::class.java))
-        }
-        findViewById<ImageButton>(R.id.btnRestaurantFilters).setOnClickListener {
-            val choices = booleanArrayOf(openOnly, favouritesOnly)
-            AlertDialog.Builder(this).setTitle("Find your next favourite")
-                .setMultiChoiceItems(arrayOf("Accepting orders now", "Saved restaurants"), choices) { _, index, checked ->
-                    choices[index] = checked
-                }.setPositiveButton("Apply") { _, _ ->
-                    openOnly = choices[0]; favouritesOnly = choices[1]; filterRestaurants()
-                }.setNegativeButton("Cancel", null).show()
-        }
-        findViewById<TextView>(R.id.btnSeeAll).setOnClickListener {
-            openOnly = false; favouritesOnly = false
-            findViewById<EditText>(R.id.etRestaurantSearch).text.clear()
-            filterRestaurants()
-        }
-    }
 
-    override fun onStart() {
-        super.onStart()
-        usersListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                allRestaurants.clear()
-                for (child in snapshot.children) {
-                    val user = child.getValue(User::class.java) ?: continue
-                    if (user.role.equals(User.ROLE_SELLER, true)) {
-                        allRestaurants.add(user.copy(uid = child.key ?: continue))
+        val topBarHeader = findViewById<View>(R.id.topBarHeader)
+        if (topBarHeader != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(topBarHeader) { v, insets ->
+                val statusBar = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+                v.updatePadding(top = statusBar.top)
+                insets
+            }
+            ViewCompat.requestApplyInsets(topBarHeader)
+        }
+
+        findViewById<View>(R.id.btnSettings)?.setOnClickListener { btn ->
+            PopupMenu(this, btn).apply {
+                menu.add("Contact Us")
+                menu.add("Support")
+                menu.add("Log Out")
+                setOnMenuItemClickListener { item ->
+                    when (item.title.toString()) {
+                        "Log Out" -> {
+                            FirebaseAuth.getInstance().signOut()
+                            startActivity(Intent(this@MainActivity, LoginActivity::class.java).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            })
+                            finish()
+                        }
+                        else -> Toast.makeText(this@MainActivity, item.title, Toast.LENGTH_SHORT).show()
                     }
-                    if (child.key == FirebaseAuth.getInstance().currentUser?.uid) {
-                        findViewById<TextView>(R.id.tvBuyerLocation).text =
-                            user.address.ifBlank { "Set your delivery address" } + "  ⌄"
-                    }
+                    true
                 }
-                loaded = true; loadError = null
-                filterRestaurants()
-            }
-            override fun onCancelled(error: DatabaseError) {
-                loaded = true
-                loadError = "Could not load restaurants. Please reopen this page to retry."
-                filterRestaurants()
+                show()
             }
         }
-        mealsListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                meals.clear()
-                snapshot.children.mapNotNullTo(meals) { it.getValue(Meal::class.java) }
-                filterRestaurants()
-            }
-            override fun onCancelled(error: DatabaseError) {
-                // Restaurant name/address search remains available if menu access fails.
-                meals.clear()
-                filterRestaurants()
-            }
+
+        viewPager = findViewById(R.id.viewPager)
+        pagerAdapter = BuyerPagerAdapter(this)
+        viewPager.adapter = pagerAdapter
+
+        val targetTab = intent.getIntExtra("targetTab", 0) // Default to Home (index 0)
+        viewPager.currentItem = targetTab
+        viewPager.isUserInputEnabled = true
+
+        val selectedId = when (targetTab) {
+            0 -> R.id.buyerHome
+            1 -> R.id.buyerCart
+            2 -> R.id.buyerOrders
+            3 -> R.id.buyerProfile
+            else -> R.id.buyerHome
         }
-        database.getReference("users").addValueEventListener(usersListener!!)
-        database.getReference("menuItems").addValueEventListener(mealsListener!!)
-        handler.post(refresh)
+
+        BuyerNavigation.attach(this, selectedId)
     }
 
-    override fun onStop() {
-        usersListener?.let { database.getReference("users").removeEventListener(it) }
-        mealsListener?.let { database.getReference("menuItems").removeEventListener(it) }
-        handler.removeCallbacks(refresh)
-        super.onStop()
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val targetTab = intent?.getIntExtra("targetTab", 0) ?: 0
+        setViewPagerItem(targetTab)
     }
 
-    private fun filterRestaurants() {
-        if (!::adapter.isInitialized) return
-        val query = findViewById<EditText>(R.id.etRestaurantSearch).text.toString().trim()
-        val matchingSellers = meals.filter {
-            it.name.contains(query, true) || it.tags.any { tag -> tag.contains(query, true) }
-        }.map { it.sellerId }.toSet()
-        val favourites = BuyerFavourites.ids(this)
-        visibleRestaurants.clear()
-        visibleRestaurants.addAll(allRestaurants.filter { user ->
-            (query.isBlank() || user.name.contains(query, true) ||
-                user.address.contains(query, true) || user.uid in matchingSellers) &&
-            (!openOnly || RestaurantAvailability.status(user) == RestaurantAvailability.Status.OPEN) &&
-            (!favouritesOnly || user.uid in favourites)
-        })
-        adapter.notifyDataSetChanged()
-        findViewById<TextView>(R.id.tvRestaurantHeading).text =
-            if (query.isNotBlank() || openOnly || favouritesOnly) "Your matches" else "Discover kitchens"
-        findViewById<TextView>(R.id.tvRestaurantEmpty).apply {
-            visibility = if (visibleRestaurants.isEmpty() || loadError != null) View.VISIBLE else View.GONE
-            text = loadError ?: if (!loaded) "Loading restaurants…" else
-                if (allRestaurants.isEmpty()) "No restaurants available yet." else "No restaurants match. Try See all."
+    fun setViewPagerItem(index: Int) {
+        if (::viewPager.isInitialized) {
+            viewPager.currentItem = index
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean("openOnly", openOnly)
-        outState.putBoolean("favouritesOnly", favouritesOnly)
-        outState.putString("query", findViewById<EditText>(R.id.etRestaurantSearch).text.toString())
-        super.onSaveInstanceState(outState)
     }
 }

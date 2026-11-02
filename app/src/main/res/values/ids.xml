@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="id" name="buyerCart" />
+    <item type="id" name="buyerOrders" />
+    <item type="id" name="buyerHome" />
+    <item type="id" name="buyerProfile" />
+    <item type="id" name="sellerMenu" />
+    <item type="id" name="sellerOrders" />
+    <item type="id" name="sellerHome" />
+    <item type="id" name="sellerAvailability" />
+    <item type="id" name="sellerProfile" />
+</resources>

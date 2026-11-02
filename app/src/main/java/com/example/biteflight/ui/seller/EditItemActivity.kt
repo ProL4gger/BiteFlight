@@ -1,6 +1,7 @@
 
 package com.example.biteflight.ui.seller
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
@@ -228,6 +229,11 @@ class EditItemActivity : AppCompatActivity() {
                     "Item updated successfully",
                     Toast.LENGTH_SHORT
                 ).show()
+                val intent = Intent(this, SellerDashboardActivity::class.java).apply {
+                    putExtra("targetTab", 0) // Menu tab is at index 0 [Menu, Orders, Home, Availability, Profile]
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+                startActivity(intent)
                 finish()
             }
             .addOnFailureListener { error ->

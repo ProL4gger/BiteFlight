@@ -4,10 +4,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.TextView
 import android.widget.ImageView
-import coil.load
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Meal
 
@@ -23,26 +24,23 @@ class BuyerMealAdapter(
         itemView: View
     ) : RecyclerView.ViewHolder(itemView) {
 
-        val photo: ImageView = itemView.findViewById(R.id.ivMealPhoto)
+        val photo: ImageView =
+            itemView.findViewById(R.id.ivMealPhoto)
+
         val tvMealName: TextView =
-            itemView.findViewById(
-                R.id.tvMealName
-            )
+            itemView.findViewById(R.id.tvMealName)
 
         val tvMealPrice: TextView =
-            itemView.findViewById(
-                R.id.tvMealPrice
-            )
+            itemView.findViewById(R.id.tvMealPrice)
 
         val tvMealTags: TextView =
-            itemView.findViewById(
-                R.id.tvMealTags
-            )
+            itemView.findViewById(R.id.tvMealTags)
+
+        val tvMealStock: TextView =
+            itemView.findViewById(R.id.tvMealStock)
 
         val btnAddToCart: Button =
-            itemView.findViewById(
-                R.id.btnAddToCart
-            )
+            itemView.findViewById(R.id.btnAddToCart)
     }
 
     override fun onCreateViewHolder(
@@ -50,14 +48,13 @@ class BuyerMealAdapter(
         viewType: Int
     ): MealViewHolder {
 
-        val view =
-            LayoutInflater
-                .from(parent.context)
-                .inflate(
-                    R.layout.item_buyer_meal,
-                    parent,
-                    false
-                )
+        val view = LayoutInflater
+            .from(parent.context)
+            .inflate(
+                R.layout.item_buyer_meal,
+                parent,
+                false
+            )
 
         return MealViewHolder(view)
     }
@@ -67,18 +64,21 @@ class BuyerMealAdapter(
         position: Int
     ) {
 
-        val meal =
-            meals[position]
+        val meal = meals[position]
 
-        holder.photo.contentDescription = "Photo of " + meal.name
-        holder.photo.load(meal.imageUrl.ifBlank { null }) {
+        holder.photo.contentDescription =
+            "Photo of ${meal.name}"
+
+        holder.photo.load(
+            meal.imageUrl.ifBlank { null }
+        ) {
             placeholder(R.drawable.ic_logo)
             error(R.drawable.ic_logo)
             fallback(R.drawable.ic_logo)
             crossfade(true)
         }
-        holder.tvMealName.text =
-            meal.name
+
+        holder.tvMealName.text = meal.name
 
         holder.tvMealPrice.text =
             "EGP ${meal.price}"
@@ -86,16 +86,56 @@ class BuyerMealAdapter(
         holder.tvMealTags.text =
             meal.tags.joinToString(", ")
 
-        holder.btnAddToCart.isEnabled = orderingEnabled
-        holder.btnAddToCart.text = orderButtonLabel
+        val isInStock = meal.stockQuantity > 0
+
+        // Show availability only, never the quantity.
+        if (isInStock) {
+
+            holder.tvMealStock.text = "Available"
+
+            holder.tvMealStock.setTextColor(
+                ContextCompat.getColor(
+                    holder.itemView.context,
+                    android.R.color.holo_green_dark
+                )
+            )
+
+        } else {
+
+            holder.tvMealStock.text = "Out of Stock"
+
+            holder.tvMealStock.setTextColor(
+                ContextCompat.getColor(
+                    holder.itemView.context,
+                    android.R.color.holo_red_dark
+                )
+            )
+        }
+
+        // Disable ordering when the item is unavailable
+        // or the restaurant is closed/busy.
+        holder.btnAddToCart.isEnabled =
+            orderingEnabled && isInStock
+
+        holder.btnAddToCart.text = when {
+            !isInStock -> "Out of Stock"
+            !orderingEnabled -> orderButtonLabel
+            else -> "Add to Cart"
+        }
+
+        // Fade only the image of unavailable products.
+        holder.photo.alpha =
+            if (isInStock) 1.0f else 0.5f
+
         holder.btnAddToCart.setOnClickListener {
 
-            onAddToCart(meal)
+            if (orderingEnabled && meal.stockQuantity > 0) {
+                onAddToCart(meal)
+            }
         }
     }
 
     override fun getItemCount(): Int {
-
         return meals.size
     }
 }

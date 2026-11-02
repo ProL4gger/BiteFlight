@@ -15,11 +15,28 @@ import com.example.biteflight.data.model.OrderItem
 import com.example.biteflight.utils.RestaurantGate
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 
 class CheckoutActivity : AppCompatActivity() {
 
     private lateinit var etDeliveryAddress: EditText
+    private lateinit var btnConfirmOrder: Button
+
+    private var placingOrder = false
+
+    // Private snapshot of an order item and its required quantity.
+    private data class RequestedItem(
+        val mealId: String,
+        val sellerId: String,
+        val quantity: Int,
+        val name: String,
+        val price: Double
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,9 +51,7 @@ class CheckoutActivity : AppCompatActivity() {
         // -------------------------
 
         val toolbar =
-            findViewById<MaterialToolbar>(
-                R.id.topToolbar
-            )
+            findViewById<MaterialToolbar>(R.id.topToolbar)
 
         setSupportActionBar(toolbar)
 
@@ -84,9 +99,7 @@ class CheckoutActivity : AppCompatActivity() {
             )
 
         etDeliveryAddress =
-            findViewById(
-                R.id.etDeliveryAddress
-            )
+            findViewById(R.id.etDeliveryAddress)
 
         val btnConfirmOrder =
             findViewById<Button>(
@@ -95,8 +108,7 @@ class CheckoutActivity : AppCompatActivity() {
 
 
         tvRestaurant.text =
-            CartManager.restaurantName
-                ?: "Restaurant"
+            CartManager.restaurantName ?: "Restaurant"
 
         tvTotal.text =
             "Total: EGP ${CartManager.getTotal()}"
@@ -106,17 +118,15 @@ class CheckoutActivity : AppCompatActivity() {
         // ORDER SUMMARY
         // -------------------------
 
-        val summary =
-            StringBuilder()
+        val summary = StringBuilder()
 
         for (cartItem in CartManager.getItems()) {
-
             summary.append(
-                "${cartItem.meal.name}  x${cartItem.quantity}"
+                "${cartItem.meal.name} x${cartItem.quantity}"
             )
 
             summary.append(
-                "  - EGP ${cartItem.meal.price * cartItem.quantity}"
+                " - EGP ${cartItem.meal.price * cartItem.quantity}"
             )
 
             summary.append("\n")
@@ -139,17 +149,16 @@ class CheckoutActivity : AppCompatActivity() {
 
         btnConfirmOrder.setOnClickListener {
 
+            if (placingOrder) {
+                return@setOnClickListener
+            }
+
             val address =
-                etDeliveryAddress
-                    .text
-                    .toString()
-                    .trim()
+                etDeliveryAddress.text.toString().trim()
 
             if (address.isEmpty()) {
-
                 etDeliveryAddress.error =
                     "Enter delivery address"
-
                 return@setOnClickListener
             }
 
@@ -158,6 +167,40 @@ class CheckoutActivity : AppCompatActivity() {
                 Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val buyer =
+                FirebaseAuth.getInstance().currentUser
+
+            if (buyer == null) {
+                showMessage("You are not logged in")
+                return@setOnClickListener
+            }
+
+            // Copy the cart before starting asynchronous work.
+            val requestedItems =
+                CartManager.getItems().map { cartItem ->
+                    RequestedItem(
+                        mealId = cartItem.meal.id,
+                        sellerId = cartItem.meal.sellerId,
+                        quantity = cartItem.quantity,
+                        name = cartItem.meal.name,
+                        price = cartItem.meal.price
+                    )
+                }
+
+            if (requestedItems.isEmpty() ||
+                requestedItems.any {
+                    it.mealId.isBlank() ||
+                            it.sellerId != sellerId ||
+                            it.quantity <= 0
+                } ||
+                requestedItems.map { it.mealId }.distinct().size
+                != requestedItems.size
+            ) {
+                showMessage("Invalid cart items")
+                return@setOnClickListener
+            }
+
+            placingOrder = true
             btnConfirmOrder.isEnabled = false
             RestaurantGate.check(sellerId) { error ->
                 if (isFinishing || isDestroyed) return@check
@@ -165,204 +208,309 @@ class CheckoutActivity : AppCompatActivity() {
                     btnConfirmOrder.isEnabled = true
                     Toast.makeText(this, error, Toast.LENGTH_LONG).show()
                 } else {
-                    saveOrder(address)
+                    reserveStockAndPlaceOrder(
+                        requestedItems = requestedItems,
+                        sellerId = sellerId,
+                        buyerId = buyer.uid,
+                        deliveryAddress = address
+                    )
                 }
             }
         }
     }
 
+    private fun reserveStockAndPlaceOrder(
+        requestedItems: List<RequestedItem>,
+        sellerId: String,
+        buyerId: String,
+        deliveryAddress: String
+    ) {
+
+        val database = FirebaseDatabase.getInstance()
+
+        val menuReference =
+            database.getReference("menuItems")
+
+        val ordersReference =
+            database.getReference("orders")
+
+        val orderId = ordersReference.push().key
+
+        if (orderId == null) {
+            finishWithError("Could not create order")
+            return
+        }
+
+        val orderItems = requestedItems.map {
+            OrderItem(
+                mealId = it.mealId,
+                name = it.name,
+                price = it.price,
+                quantity = it.quantity
+            )
+        }
+
+        val order = Order(
+            id = orderId,
+            buyerId = buyerId,
+            sellerId = sellerId,
+            restaurantName =
+                CartManager.restaurantName ?: "Restaurant",
+            deliveryAddress = deliveryAddress,
+            items = orderItems,
+            total = requestedItems.sumOf {
+                it.price * it.quantity
+            },
+            status = "PLACED",
+            createdAt = System.currentTimeMillis()
+        )
+
+        var stockFailure = "Not enough quantity in stock"
+
+        // One transaction reserves ALL products in this cart.
+        menuReference.runTransaction(
+            object : Transaction.Handler {
+
+                override fun doTransaction(
+                    currentData: MutableData
+                ): Transaction.Result {
+
+                    val quantities = mutableMapOf<String, Long>()
+
+                    // First validate all items, without changing anything.
+                    for (item in requestedItems) {
+
+                        val mealData =
+                            currentData.child(item.mealId)
+
+                        val storedSellerId =
+                            mealData.child("sellerId")
+                                .value as? String
+
+                        val stock =
+                            (mealData.child("stockQuantity")
+                                .value as? Number)?.toLong()
+
+                        if (storedSellerId != item.sellerId) {
+                            stockFailure = "Item is no longer available"
+                            return Transaction.abort()
+                        }
+
+                        if (stock == null || stock <= 0L) {
+                            stockFailure =
+                                "${item.name} is Out of Stock"
+                            return Transaction.abort()
+                        }
+
+                        if (stock < item.quantity.toLong()) {
+                            stockFailure =
+                                "Not enough quantity in stock for ${item.name}"
+                            return Transaction.abort()
+                        }
+
+                        quantities[item.mealId] = stock
+                    }
+
+                    // All items have enough stock.
+                    // Deduct every item in the same transaction.
+                    for (item in requestedItems) {
+
+                        val existingStock =
+                            quantities[item.mealId]
+                                ?: return Transaction.abort()
+
+                        currentData.child(item.mealId)
+                            .child("stockQuantity")
+                            .value =
+                            existingStock - item.quantity.toLong()
+                    }
+
+                    return Transaction.success(currentData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+
+                    if (error != null) {
+                        finishWithError(
+                            "Could not update stock: ${error.message}"
+                        )
+                        return
+                    }
+
+                    if (!committed) {
+                        finishWithError(stockFailure)
+                        return
+                    }
+
+                    // Stock has been reserved successfully.
+                    // Now save the order.
+                    ordersReference.child(orderId)
+                        .setValue(order)
+                        .addOnSuccessListener {
+
+                            CartManager.clearCart()
+                            placingOrder = false
+
+                            if (!isFinishing && !isDestroyed) {
+                                showMessage(
+                                    "Order placed successfully!"
+                                )
+
+                                val intent = Intent(this@CheckoutActivity, MainActivity::class.java)
+
+                                intent.putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
+
+                                intent.flags =
+                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+                                startActivity(intent)
+                                finish()
+                            }
+                        }
+                        .addOnFailureListener { saveError ->
+
+                            // Attempt to restore reserved stock
+                            // if saving the order fails.
+                            restoreStock(
+                                menuReference,
+                                requestedItems
+                            ) { restored ->
+
+                                val message = if (restored) {
+                                    "Order failed: ${saveError.message}"
+                                } else {
+                                    "Order save failed and stock recovery " +
+                                            "needs administrator review"
+                                }
+
+                                finishWithError(message)
+                            }
+                        }
+                }
+            },
+            false
+        )
+    }
+
+    // Compensation if the order write fails.
+    // This is NOT equivalent to an atomic server-side checkout.
+    private fun restoreStock(
+        menuReference: DatabaseReference,
+        requestedItems: List<RequestedItem>,
+        onComplete: (Boolean) -> Unit
+    ) {
+
+        menuReference.runTransaction(
+            object : Transaction.Handler {
+
+                override fun doTransaction(
+                    currentData: MutableData
+                ): Transaction.Result {
+
+                    for (item in requestedItems) {
+
+                        val mealData =
+                            currentData.child(item.mealId)
+
+                        val currentStock =
+                            (mealData.child("stockQuantity")
+                                .value as? Number)?.toLong()
+                                ?: return Transaction.abort()
+
+                        val currentSellerId =
+                            mealData.child("sellerId")
+                                .value as? String
+
+                        if (currentSellerId != item.sellerId) {
+                            return Transaction.abort()
+                        }
+
+                        if (currentStock >
+                            Long.MAX_VALUE - item.quantity.toLong()
+                        ) {
+                            return Transaction.abort()
+                        }
+                    }
+
+                    for (item in requestedItems) {
+
+                        val mealData =
+                            currentData.child(item.mealId)
+
+                        val currentStock =
+                            (mealData.child("stockQuantity")
+                                .value as Number).toLong()
+
+                        mealData.child("stockQuantity").value =
+                            currentStock + item.quantity.toLong()
+                    }
+
+                    return Transaction.success(currentData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    onComplete(error == null && committed)
+                }
+            },
+            false
+        )
+    }
 
     private fun loadBuyerAddress() {
 
-        val user =
-            FirebaseAuth
-                .getInstance()
-                .currentUser
-                ?: return
+        val user = FirebaseAuth.getInstance()
+            .currentUser ?: return
 
-        FirebaseDatabase
-            .getInstance()
+        FirebaseDatabase.getInstance()
             .getReference("users")
             .child(user.uid)
             .child("address")
             .get()
-
             .addOnSuccessListener { snapshot ->
 
                 val address =
-                    snapshot.getValue(
-                        String::class.java
-                    )
+                    snapshot.getValue(String::class.java)
 
                 if (!address.isNullOrEmpty()) {
-
-                    etDeliveryAddress.setText(
-                        address
-                    )
+                    etDeliveryAddress.setText(address)
                 }
             }
     }
 
+    private fun finishWithError(message: String) {
 
-    private fun saveOrder(
-        deliveryAddress: String
-    ) {
+        placingOrder = false
 
-        val buyer =
-            FirebaseAuth
-                .getInstance()
-                .currentUser
-
-        if (buyer == null) {
-            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
-
-            Toast.makeText(
-                this,
-                "You are not logged in",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            return
+        if (!isFinishing && !isDestroyed) {
+            btnConfirmOrder.isEnabled = true
+            showMessage(message)
         }
-
-
-        val sellerId =
-            CartManager.restaurantId
-
-        if (sellerId.isNullOrEmpty()) {
-            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
-
-            Toast.makeText(
-                this,
-                "Restaurant not found",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            return
-        }
-
-
-        val ordersReference =
-            FirebaseDatabase
-                .getInstance()
-                .getReference("orders")
-
-        val orderId =
-            ordersReference
-                .push()
-                .key
-
-        if (orderId == null) {
-            findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
-
-            Toast.makeText(
-                this,
-                "Could not create order",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            return
-        }
-
-
-        val orderItems =
-            CartManager
-                .getItems()
-                .map { cartItem ->
-
-                    OrderItem(
-                        mealId =
-                            cartItem.meal.id,
-
-                        name =
-                            cartItem.meal.name,
-
-                        price =
-                            cartItem.meal.price,
-
-                        quantity =
-                            cartItem.quantity
-                    )
-                }
-
-
-        val order =
-            Order(
-                id = orderId,
-
-                buyerId =
-                    buyer.uid,
-
-                sellerId =
-                    sellerId,
-
-                restaurantName =
-                    CartManager.restaurantName
-                        ?: "Restaurant",
-
-                deliveryAddress =
-                    deliveryAddress,
-
-                items =
-                    orderItems,
-
-                total =
-                    CartManager.getTotal(),
-
-                status =
-                    "PLACED",
-
-                createdAt =
-                    System.currentTimeMillis()
-            )
-
-
-        ordersReference
-            .child(orderId)
-            .setValue(order)
-
-            .addOnSuccessListener {
-
-                Toast.makeText(
-                    this,
-                    "Order placed successfully!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                CartManager.clearCart()
-
-                val intent =
-                    Intent(
-                        this,
-                        MainActivity::class.java
-                    )
-
-                intent.putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
-
-                intent.flags =
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-
-                startActivity(intent)
-
-                finish()
-            }
-
-            .addOnFailureListener { error ->
-                findViewById<Button>(R.id.btnConfirmOrder).isEnabled = true
-
-                Toast.makeText(
-                    this,
-                    "Order failed: ${error.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
     }
 
+    private fun showMessage(message: String) {
+        Toast.makeText(
+            this,
+            message,
+            Toast.LENGTH_LONG
+        ).show()
+    }
 
     override fun onSupportNavigateUp(): Boolean {
 
-        finish()
+        if (placingOrder) {
+            showMessage("Order is being processed")
+            return true
+        }
 
+        finish()
         return true
     }
 }

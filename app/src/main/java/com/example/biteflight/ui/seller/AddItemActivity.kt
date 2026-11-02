@@ -1,4 +1,3 @@
-
 package com.example.biteflight.ui.seller
 
 import android.content.Intent
@@ -65,6 +64,7 @@ class AddItemActivity : AppCompatActivity() {
 
         val etMealName = findViewById<EditText>(R.id.etMealName)
         val etPrice = findViewById<EditText>(R.id.etPrice)
+        val etStockQuantity = findViewById<EditText>(R.id.etStockQuantity)
         val etCustomTags = findViewById<EditText>(R.id.etCustomTags)
 
         val btnUploadMealImage =
@@ -80,6 +80,12 @@ class AddItemActivity : AppCompatActivity() {
             val mealName = etMealName.text.toString().trim()
             val priceText = etPrice.text.toString().trim()
             val price = priceText.toDoubleOrNull()
+
+            // NEW: Read the stock quantity
+            val stockQuantity =
+                etStockQuantity.text.toString()
+                    .trim()
+                    .toIntOrNull()
 
             val selectedTags = collectTags()
 
@@ -104,6 +110,13 @@ class AddItemActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // NEW: Validate stock quantity
+            if (stockQuantity == null || stockQuantity < 0) {
+                etStockQuantity.error =
+                    "Enter a valid stock quantity"
+                return@setOnClickListener
+            }
+
             if (uniqueTags.isEmpty()) {
                 Toast.makeText(
                     this,
@@ -113,9 +126,11 @@ class AddItemActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            // NEW: Pass stock quantity to Firebase
             saveMealToFirebase(
                 mealName = mealName,
                 price = price,
+                stockQuantity = stockQuantity,
                 tags = uniqueTags,
                 imageUrl = uploadedImageUrl
             )
@@ -203,6 +218,7 @@ class AddItemActivity : AppCompatActivity() {
     private fun saveMealToFirebase(
         mealName: String,
         price: Double,
+        stockQuantity: Int,
         tags: List<String>,
         imageUrl: String
     ) {
@@ -231,13 +247,15 @@ class AddItemActivity : AppCompatActivity() {
             return
         }
 
+        // NEW: Save stock together with meal data
         val meal = Meal(
             id = itemId,
             name = mealName,
             price = price,
             tags = tags,
             sellerId = currentUser.uid,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            stockQuantity = stockQuantity
         )
 
         val btnSave = findViewById<Button>(R.id.btnSaveItem)

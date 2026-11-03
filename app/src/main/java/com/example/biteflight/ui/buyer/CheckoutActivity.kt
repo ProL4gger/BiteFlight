@@ -41,47 +41,21 @@ class CheckoutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(
-            R.layout.activity_checkout
-        )
+        setContentView(R.layout.activity_checkout)
         BuyerNavigation.attach(this, R.id.buyerCart)
-
-        // -------------------------
-        // TOOLBAR
-        // -------------------------
 
         val toolbar =
             findViewById<MaterialToolbar>(R.id.topToolbar)
 
         setSupportActionBar(toolbar)
-
-        supportActionBar?.title =
-            "Checkout"
-
-        supportActionBar
-            ?.setDisplayHomeAsUpEnabled(true)
-
-
-        // -------------------------
-        // EMPTY CART CHECK
-        // -------------------------
+        supportActionBar?.title = "Checkout"
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (CartManager.isEmpty()) {
-
-            Toast.makeText(
-                this,
-                "Your cart is empty",
-                Toast.LENGTH_SHORT
-            ).show()
-
+            showMessage("Your cart is empty")
             finish()
             return
         }
-
-
-        // -------------------------
-        // VIEWS
-        // -------------------------
 
         val tvRestaurant =
             findViewById<TextView>(
@@ -101,11 +75,8 @@ class CheckoutActivity : AppCompatActivity() {
         etDeliveryAddress =
             findViewById(R.id.etDeliveryAddress)
 
-        val btnConfirmOrder =
-            findViewById<Button>(
-                R.id.btnConfirmOrder
-            )
-
+        btnConfirmOrder =
+            findViewById(R.id.btnConfirmOrder)
 
         tvRestaurant.text =
             CartManager.restaurantName ?: "Restaurant"
@@ -113,39 +84,21 @@ class CheckoutActivity : AppCompatActivity() {
         tvTotal.text =
             "Total: EGP ${CartManager.getTotal()}"
 
-
-        // -------------------------
-        // ORDER SUMMARY
-        // -------------------------
-
         val summary = StringBuilder()
 
         for (cartItem in CartManager.getItems()) {
             summary.append(
                 "${cartItem.meal.name} x${cartItem.quantity}"
             )
-
             summary.append(
                 " - EGP ${cartItem.meal.price * cartItem.quantity}"
             )
-
             summary.append("\n")
         }
 
-        tvOrderSummary.text =
-            summary.toString()
-
-
-        // -------------------------
-        // LOAD BUYER ADDRESS
-        // -------------------------
+        tvOrderSummary.text = summary.toString()
 
         loadBuyerAddress()
-
-
-        // -------------------------
-        // CONFIRM ORDER
-        // -------------------------
 
         btnConfirmOrder.setOnClickListener {
 
@@ -163,10 +116,14 @@ class CheckoutActivity : AppCompatActivity() {
             }
 
             val sellerId = CartManager.restaurantId
-            if (sellerId.isNullOrBlank() || CartManager.isEmpty()) {
-                Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show()
+
+            if (sellerId.isNullOrBlank() ||
+                CartManager.isEmpty()
+            ) {
+                showMessage("Your cart is empty")
                 return@setOnClickListener
             }
+
             val buyer =
                 FirebaseAuth.getInstance().currentUser
 
@@ -202,11 +159,11 @@ class CheckoutActivity : AppCompatActivity() {
 
             placingOrder = true
             btnConfirmOrder.isEnabled = false
+
             RestaurantGate.check(sellerId) { error ->
-                if (isFinishing || isDestroyed) return@check
+
                 if (error != null) {
-                    btnConfirmOrder.isEnabled = true
-                    Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+                    finishWithError(error)
                 } else {
                     reserveStockAndPlaceOrder(
                         requestedItems = requestedItems,
@@ -353,6 +310,7 @@ class CheckoutActivity : AppCompatActivity() {
                         .addOnSuccessListener {
 
                             CartManager.clearCart()
+
                             placingOrder = false
 
                             if (!isFinishing && !isDestroyed) {
@@ -360,12 +318,13 @@ class CheckoutActivity : AppCompatActivity() {
                                     "Order placed successfully!"
                                 )
 
-                                val intent = Intent(this@CheckoutActivity, MainActivity::class.java)
-
-                                intent.putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
-
-                                intent.flags =
-                                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                val intent = Intent(
+                                    this@CheckoutActivity,
+                                    MainActivity::class.java
+                                ).apply {
+                                    putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                }
 
                                 startActivity(intent)
                                 finish()

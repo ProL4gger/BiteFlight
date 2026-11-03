@@ -25,6 +25,16 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvOrderId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Order ID"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/tvOrderItems"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

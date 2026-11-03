@@ -31,9 +31,17 @@ class BuyerOrdersFragment : Fragment() {
         view.findViewById<View>(R.id.topToolbar)?.visibility = View.GONE
 
         val recycler = view.findViewById<RecyclerView>(R.id.recyclerOrders)
-        adapter = OrderAdapter(orderList)
-        recycler.layoutManager = LinearLayoutManager(requireContext())
-        recycler.adapter = adapter
+        recycler?.clipToPadding = false
+        recycler?.setPadding(
+            recycler.paddingLeft,
+            recycler.paddingTop,
+            recycler.paddingRight,
+            (130 * resources.displayMetrics.density).toInt()
+        )
+
+        adapter = OrderAdapter(orderList, isForSeller = false)
+        recycler?.layoutManager = LinearLayoutManager(requireContext())
+        recycler?.adapter = adapter
 
         loadOrders()
     }
@@ -58,7 +66,9 @@ class BuyerOrdersFragment : Fragment() {
                     }
                 }
                 orderList.sortByDescending { it.createdAt }
-                adapter.notifyDataSetChanged()
+                if (::adapter.isInitialized) {
+                    adapter.notifyDataSetChanged()
+                }
             }
             .addOnFailureListener { error ->
                 Toast.makeText(requireContext(), error.message, Toast.LENGTH_LONG).show()

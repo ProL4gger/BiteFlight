@@ -246,14 +246,14 @@ class CheckoutActivity : AppCompatActivity() {
 
                         val stock =
                             (mealData.child("stockQuantity")
-                                .value as? Number)?.toLong()
+                                .value as? Number)?.toLong() ?: 99L
 
-                        if (storedSellerId != item.sellerId) {
+                        if (!storedSellerId.isNullOrBlank() && storedSellerId != item.sellerId) {
                             stockFailure = "Item is no longer available"
                             return Transaction.abort()
                         }
 
-                        if (stock == null || stock <= 0L) {
+                        if (stock <= 0L) {
                             stockFailure =
                                 "${item.name} is Out of Stock"
                             return Transaction.abort()

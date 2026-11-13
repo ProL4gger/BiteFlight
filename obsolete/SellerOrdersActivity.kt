@@ -1,4 +1,4 @@
-package com.example.biteflight.ui.buyer
+package com.example.biteflight.ui.seller
 
 import android.os.Bundle
 import android.widget.Toast
@@ -7,11 +7,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
+import com.example.biteflight.ui.buyer.OrderAdapter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 
-class BuyerOrdersActivity : AppCompatActivity() {
+class SellerOrdersActivity : AppCompatActivity() {
 
     private val orderList =
         mutableListOf<Order>()
@@ -25,8 +26,8 @@ class BuyerOrdersActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_orders
         )
-        BuyerNavigation.attach(this, R.id.buyerOrders)
 
+        SellerNavigation.attach(this, R.id.sellerOrders)
         val toolbar =
             findViewById<MaterialToolbar>(
                 R.id.topToolbar
@@ -35,7 +36,7 @@ class BuyerOrdersActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         supportActionBar?.title =
-            "My Orders"
+            "Restaurant Orders"
 
         supportActionBar
             ?.setDisplayHomeAsUpEnabled(true)
@@ -55,13 +56,13 @@ class BuyerOrdersActivity : AppCompatActivity() {
         recycler.adapter =
             adapter
 
-        loadBuyerOrders()
+        loadSellerOrders()
     }
 
 
-    private fun loadBuyerOrders() {
+    private fun loadSellerOrders() {
 
-        val buyer =
+        val seller =
             FirebaseAuth
                 .getInstance()
                 .currentUser
@@ -70,8 +71,8 @@ class BuyerOrdersActivity : AppCompatActivity() {
         FirebaseDatabase
             .getInstance()
             .getReference("orders")
-            .orderByChild("buyerId")
-            .equalTo(buyer.uid)
+            .orderByChild("sellerId")
+            .equalTo(seller.uid)
             .get()
 
             .addOnSuccessListener { snapshot ->

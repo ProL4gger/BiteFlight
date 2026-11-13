@@ -27,10 +27,16 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        auth = Firebase.auth
+
+        // Persistent login session check: if already logged in, route immediately
+        if (auth.currentUser != null) {
+            openCorrectPage()
+            return
+        }
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        auth = Firebase.auth
 
         val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
         setSupportActionBar(toolbar)

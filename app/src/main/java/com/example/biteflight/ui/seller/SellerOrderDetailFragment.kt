@@ -18,6 +18,8 @@ import java.util.Locale
 
 class SellerOrderDetailFragment(private val order: Order) : Fragment() {
 
+    private var currentStatus = order.status
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -39,23 +41,50 @@ class SellerOrderDetailFragment(private val order: Order) : Fragment() {
         val tvStatus = view.findViewById<TextView>(R.id.tvDetailStatus)
         val btnComplete = view.findViewById<MaterialButton>(R.id.btnCompleteOrder)
 
-        tvStatus?.text = "Status: ${order.status}"
-
-        if (order.status.equals("COMPLETED", true)) {
-            btnComplete?.isEnabled = false
-            btnComplete?.text = "Order Completed"
+        fun updateButtonState(status: String) {
+            currentStatus = status
+            tvStatus?.text = "Status: $status"
+            when {
+                status.equals("PLACED", true) -> {
+                    btnComplete?.isEnabled = true
+                    btnComplete?.text = "Mark as In Progress"
+                }
+                status.equals("In Progress", true) -> {
+                    btnComplete?.isEnabled = true
+                    btnComplete?.text = "Mark as Out for delivery"
+                }
+                status.equals("Out for delivery", true) -> {
+                    btnComplete?.isEnabled = true
+                    btnComplete?.text = "Mark as Completed"
+                }
+                status.equals("COMPLETED", true) -> {
+                    btnComplete?.isEnabled = false
+                    btnComplete?.text = "Order Completed"
+                }
+                else -> {
+                    btnComplete?.isEnabled = true
+                    btnComplete?.text = "Mark as In Progress"
+                }
+            }
         }
 
+        updateButtonState(currentStatus)
+
         btnComplete?.setOnClickListener {
+            val nextStatus = when {
+                currentStatus.equals("PLACED", true) -> "In Progress"
+                currentStatus.equals("In Progress", true) -> "Out for delivery"
+                currentStatus.equals("Out for delivery", true) -> "COMPLETED"
+                else -> "COMPLETED"
+            }
+
             FirebaseDatabase.getInstance().getReference("orders")
                 .child(order.id)
                 .child("status")
-                .setValue("COMPLETED")
+                .setValue(nextStatus)
                 .addOnSuccessListener {
-                    Toast.makeText(requireContext(), "Order marked as completed", Toast.LENGTH_SHORT).show()
-                    tvStatus?.text = "Status: COMPLETED"
-                    btnComplete.isEnabled = false
-                    btnComplete.text = "Order Completed"
+                    Toast.makeText(requireContext(), "Order status updated to: $nextStatus", Toast.LENGTH_SHORT).show()
+                    updateButtonState(nextStatus)
                 }
                 .addOnFailureListener { error ->
                     Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_LONG).show()

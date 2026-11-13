@@ -26,7 +26,6 @@ class CartActivity : AppCompatActivity() {
     private lateinit var btnReturnToMenu: Button
     private lateinit var btnClearCart: Button
 
-    // Prevent simultaneous quantity changes while Firebase is checking.
     private var checkingStock = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,7 +34,6 @@ class CartActivity : AppCompatActivity() {
         setContentView(R.layout.activity_cart)
         BuyerNavigation.attach(this, R.id.buyerCart)
 
-        // TOOLBAR
         val toolbar =
             findViewById<MaterialToolbar>(R.id.topToolbar)
 
@@ -43,7 +41,6 @@ class CartActivity : AppCompatActivity() {
         supportActionBar?.title = "Your Cart"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // VIEWS
         val recyclerCart =
             findViewById<RecyclerView>(R.id.recyclerCart)
 
@@ -55,7 +52,6 @@ class CartActivity : AppCompatActivity() {
         btnReturnToMenu = findViewById(R.id.btnReturnToMenu)
         btnClearCart = findViewById(R.id.btnClearCart)
 
-        // CART ADAPTER
         adapter = CartAdapter(
             CartManager.getItems(),
 
@@ -85,7 +81,6 @@ class CartActivity : AppCompatActivity() {
 
         recyclerCart.adapter = adapter
 
-        // CHECKOUT
         btnCheckout.setOnClickListener {
             if (checkingStock) return@setOnClickListener
 
@@ -106,14 +101,12 @@ class CartActivity : AppCompatActivity() {
             )
         }
 
-        // CONTINUE SHOPPING
         btnReturnToMenu.setOnClickListener {
             if (!checkingStock) {
                 returnToRestaurantMenu()
             }
         }
 
-        // CLEAR CART
         btnClearCart.setOnClickListener {
             if (!checkingStock) {
                 CartManager.clearCart()
@@ -132,7 +125,6 @@ class CartActivity : AppCompatActivity() {
         updateCartInfo()
     }
 
-    // NEW: CHECK STOCK BEFORE INCREASING QUANTITY
     private fun checkStockAndIncrease(position: Int) {
 
         if (checkingStock) return
@@ -170,8 +162,6 @@ class CartActivity : AppCompatActivity() {
                     .child("stockQuantity")
                     .getValue(Int::class.java) ?: 0
 
-                // Find the same item again, in case the cart
-                // changed during the database request.
                 val currentPosition =
                     CartManager.getItems().indexOfFirst {
                         it.meal.id == mealId
@@ -187,7 +177,6 @@ class CartActivity : AppCompatActivity() {
 
                 when {
 
-                    // The product has been removed or has no stock.
                     !snapshot.exists() || stockQuantity <= 0 -> {
 
                         Toast.makeText(
@@ -197,7 +186,6 @@ class CartActivity : AppCompatActivity() {
                         ).show()
                     }
 
-                    // Buyer already selected the available amount.
                     currentItem.quantity >= stockQuantity -> {
 
                         Toast.makeText(
@@ -207,7 +195,6 @@ class CartActivity : AppCompatActivity() {
                         ).show()
                     }
 
-                    // Stock is sufficient for one more item.
                     else -> {
 
                         CartManager.increaseQuantity(

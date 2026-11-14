@@ -79,10 +79,10 @@ class SellerDashboardActivity : AppCompatActivity() {
         SellerNavigation.attach(this, selectedId)
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        val targetTab = intent?.getIntExtra("targetTab", 2) ?: 2
+        val targetTab = intent.getIntExtra("targetTab", 2)
         setViewPagerItem(targetTab)
     }
 

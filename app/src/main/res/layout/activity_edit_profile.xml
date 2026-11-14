@@ -104,6 +104,28 @@
                     layout="@layout/view_delivery_address"
                     android:visibility="gone" />
 
+                <!-- Location for delivery fee calculation (sellers and buyers) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPickOnMap"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Pick on map" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnUseLocation"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Use my current location" />
+
+                <TextView
+                    android:id="@+id/tvLocationStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Location not set" />
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveProfile"
                     style="@style/Widget.BiteFlight.Button"

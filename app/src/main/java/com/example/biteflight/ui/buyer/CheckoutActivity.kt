@@ -10,8 +10,13 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
+import com.example.biteflight.data.model.Delivery
+import com.example.biteflight.data.model.DeliveryStatus
+import com.example.biteflight.data.model.LocationPoint
 import com.example.biteflight.data.model.Order
 import com.example.biteflight.data.model.OrderItem
+import com.example.biteflight.data.model.User
+import com.example.biteflight.utils.DeliveryCalculator
 import com.example.biteflight.utils.RestaurantGate
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
@@ -21,15 +26,25 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
+import com.google.firebase.firestore.FirebaseFirestore
 
 class CheckoutActivity : AppCompatActivity() {
 
     private lateinit var etDeliveryAddress: EditText
     private lateinit var btnConfirmOrder: Button
+    private lateinit var tvDeliveryFee: TextView
+    private lateinit var tvTotal: TextView
 
     private var placingOrder = false
 
-    // Private snapshot of an order item and its required quantity.
+    // Loaded from Firebase in loadCoordinatesAndPrice()
+    private var restaurantLat = 0.0
+    private var restaurantLng = 0.0
+    private var buyerLat = 0.0
+    private var buyerLng = 0.0
+    private var deliveryFee = 0.0
+    private var distanceKm = 0.0
+
     private data class RequestedItem(
         val mealId: String,
         val sellerId: String,
@@ -44,9 +59,7 @@ class CheckoutActivity : AppCompatActivity() {
         setContentView(R.layout.activity_checkout)
         BuyerNavigation.attach(this, R.id.buyerCart)
 
-        val toolbar =
-            findViewById<MaterialToolbar>(R.id.topToolbar)
-
+        val toolbar = findViewById<MaterialToolbar>(R.id.topToolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Checkout"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -57,45 +70,25 @@ class CheckoutActivity : AppCompatActivity() {
             return
         }
 
-        val tvRestaurant =
-            findViewById<TextView>(
-                R.id.tvCheckoutRestaurant
-            )
+        val tvRestaurant = findViewById<TextView>(R.id.tvCheckoutRestaurant)
+        val tvOrderSummary = findViewById<TextView>(R.id.tvOrderSummary)
+        tvTotal = findViewById(R.id.tvCheckoutTotal)
+        tvDeliveryFee = findViewById(R.id.tvDeliveryFee) // Ensure you have this TextView ID in your activity_checkout.xml layout
+        etDeliveryAddress = findViewById(R.id.etDeliveryAddress)
+        btnConfirmOrder = findViewById(R.id.btnConfirmOrder)
 
-        val tvOrderSummary =
-            findViewById<TextView>(
-                R.id.tvOrderSummary
-            )
+        tvRestaurant.text = CartManager.restaurantName ?: "Restaurant"
 
-        val tvTotal =
-            findViewById<TextView>(
-                R.id.tvCheckoutTotal
-            )
-
-        etDeliveryAddress =
-            findViewById(R.id.etDeliveryAddress)
-
-        btnConfirmOrder =
-            findViewById(R.id.btnConfirmOrder)
-
-        tvRestaurant.text =
-            CartManager.restaurantName ?: "Restaurant"
-
-        tvTotal.text =
-            "Total: EGP ${CartManager.getTotal()}"
+        btnConfirmOrder.isEnabled = false   // enabled once the fee is known
+        tvDeliveryFee.text = "Delivery Fee: calculating…"
+        loadCoordinatesAndPrice()
 
         val summary = StringBuilder()
-
         for (cartItem in CartManager.getItems()) {
-            summary.append(
-                "${cartItem.meal.name} x${cartItem.quantity}"
-            )
-            summary.append(
-                " - EGP ${cartItem.meal.price * cartItem.quantity}"
-            )
+            summary.append("${cartItem.meal.name} x${cartItem.quantity}")
+            summary.append(" - EGP ${cartItem.meal.price * cartItem.quantity}")
             summary.append("\n")
         }
-
         tvOrderSummary.text = summary.toString()
 
         loadBuyerAddress()
@@ -106,52 +99,37 @@ class CheckoutActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val address =
-                etDeliveryAddress.text.toString().trim()
-
+            val address = etDeliveryAddress.text.toString().trim()
             if (address.isEmpty()) {
-                etDeliveryAddress.error =
-                    "Enter delivery address"
+                etDeliveryAddress.error = "Enter delivery address"
                 return@setOnClickListener
             }
 
             val sellerId = CartManager.restaurantId
-
-            if (sellerId.isNullOrBlank() ||
-                CartManager.isEmpty()
-            ) {
+            if (sellerId.isNullOrBlank() || CartManager.isEmpty()) {
                 showMessage("Your cart is empty")
                 return@setOnClickListener
             }
 
-            val buyer =
-                FirebaseAuth.getInstance().currentUser
-
+            val buyer = FirebaseAuth.getInstance().currentUser
             if (buyer == null) {
                 showMessage("You are not logged in")
                 return@setOnClickListener
             }
 
-            // Copy the cart before starting asynchronous work.
-            val requestedItems =
-                CartManager.getItems().map { cartItem ->
-                    RequestedItem(
-                        mealId = cartItem.meal.id,
-                        sellerId = cartItem.meal.sellerId,
-                        quantity = cartItem.quantity,
-                        name = cartItem.meal.name,
-                        price = cartItem.meal.price
-                    )
-                }
+            val requestedItems = CartManager.getItems().map { cartItem ->
+                RequestedItem(
+                    mealId = cartItem.meal.id,
+                    sellerId = cartItem.meal.sellerId,
+                    quantity = cartItem.quantity,
+                    name = cartItem.meal.name,
+                    price = cartItem.meal.price
+                )
+            }
 
             if (requestedItems.isEmpty() ||
-                requestedItems.any {
-                    it.mealId.isBlank() ||
-                            it.sellerId != sellerId ||
-                            it.quantity <= 0
-                } ||
-                requestedItems.map { it.mealId }.distinct().size
-                != requestedItems.size
+                requestedItems.any { it.mealId.isBlank() || it.sellerId != sellerId || it.quantity <= 0 } ||
+                requestedItems.map { it.mealId }.distinct().size != requestedItems.size
             ) {
                 showMessage("Invalid cart items")
                 return@setOnClickListener
@@ -161,7 +139,6 @@ class CheckoutActivity : AppCompatActivity() {
             btnConfirmOrder.isEnabled = false
 
             RestaurantGate.check(sellerId) { error ->
-
                 if (error != null) {
                     finishWithError(error)
                 } else {
@@ -169,7 +146,9 @@ class CheckoutActivity : AppCompatActivity() {
                         requestedItems = requestedItems,
                         sellerId = sellerId,
                         buyerId = buyer.uid,
-                        deliveryAddress = address
+                        deliveryAddress = address,
+                        deliveryFee = deliveryFee,
+                        distanceKm = distanceKm
                     )
                 }
             }
@@ -180,17 +159,13 @@ class CheckoutActivity : AppCompatActivity() {
         requestedItems: List<RequestedItem>,
         sellerId: String,
         buyerId: String,
-        deliveryAddress: String
+        deliveryAddress: String,
+        deliveryFee: Double,
+        distanceKm: Double
     ) {
-
         val database = FirebaseDatabase.getInstance()
-
-        val menuReference =
-            database.getReference("menuItems")
-
-        val ordersReference =
-            database.getReference("orders")
-
+        val menuReference = database.getReference("menuItems")
+        val ordersReference = database.getReference("orders")
         val orderId = ordersReference.push().key
 
         if (orderId == null) {
@@ -207,145 +182,111 @@ class CheckoutActivity : AppCompatActivity() {
             )
         }
 
+        val itemsTotal = requestedItems.sumOf { it.price * it.quantity }
+        val grandTotal = itemsTotal + deliveryFee
+
         val order = Order(
             id = orderId,
             buyerId = buyerId,
             sellerId = sellerId,
-            restaurantName =
-                CartManager.restaurantName ?: "Restaurant",
+            restaurantName = CartManager.restaurantName ?: "Restaurant",
             deliveryAddress = deliveryAddress,
             items = orderItems,
-            total = requestedItems.sumOf {
-                it.price * it.quantity
-            },
+            total = grandTotal,
             status = "PLACED",
             createdAt = System.currentTimeMillis()
         )
 
         var stockFailure = "Not enough quantity in stock"
 
-        // One transaction reserves ALL products in this cart.
         menuReference.runTransaction(
             object : Transaction.Handler {
-
-                override fun doTransaction(
-                    currentData: MutableData
-                ): Transaction.Result {
-
+                override fun doTransaction(currentData: MutableData): Transaction.Result {
                     val quantities = mutableMapOf<String, Long>()
 
-                    // First validate all items, without changing anything.
                     for (item in requestedItems) {
-
-                        val mealData =
-                            currentData.child(item.mealId)
-
-                        val storedSellerId =
-                            mealData.child("sellerId")
-                                .value as? String
-
-                        val stock =
-                            (mealData.child("stockQuantity")
-                                .value as? Number)?.toLong() ?: 99L
+                        val mealData = currentData.child(item.mealId)
+                        val storedSellerId = mealData.child("sellerId").value as? String
+                        val stock = (mealData.child("stockQuantity").value as? Number)?.toLong() ?: 99L
 
                         if (!storedSellerId.isNullOrBlank() && storedSellerId != item.sellerId) {
                             stockFailure = "Item is no longer available"
                             return Transaction.abort()
                         }
-
                         if (stock <= 0L) {
-                            stockFailure =
-                                "${item.name} is Out of Stock"
+                            stockFailure = "${item.name} is Out of Stock"
                             return Transaction.abort()
                         }
-
                         if (stock < item.quantity.toLong()) {
-                            stockFailure =
-                                "Not enough quantity in stock for ${item.name}"
+                            stockFailure = "Not enough quantity in stock for ${item.name}"
                             return Transaction.abort()
                         }
-
                         quantities[item.mealId] = stock
                     }
 
-                    // All items have enough stock.
-                    // Deduct every item in the same transaction.
                     for (item in requestedItems) {
-
-                        val existingStock =
-                            quantities[item.mealId]
-                                ?: return Transaction.abort()
-
-                        currentData.child(item.mealId)
-                            .child("stockQuantity")
-                            .value =
-                            existingStock - item.quantity.toLong()
+                        val existingStock = quantities[item.mealId] ?: return Transaction.abort()
+                        currentData.child(item.mealId).child("stockQuantity").value = existingStock - item.quantity.toLong()
                     }
 
                     return Transaction.success(currentData)
                 }
 
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-
+                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                     if (error != null) {
-                        finishWithError(
-                            "Could not update stock: ${error.message}"
-                        )
+                        finishWithError("Could not update stock: ${error.message}")
                         return
                     }
-
                     if (!committed) {
                         finishWithError(stockFailure)
                         return
                     }
 
-                    // Stock has been reserved successfully.
-                    // Now save the order.
-                    ordersReference.child(orderId)
-                        .setValue(order)
+                    // 1. Save the order in Realtime Database
+                    ordersReference.child(orderId).setValue(order)
                         .addOnSuccessListener {
 
-                            CartManager.clearCart()
+                            // 2. Save the Delivery task in Firestore so Delivery drivers can accept it
+                            val firestore = FirebaseFirestore.getInstance()
+                            val deliveryId = firestore.collection("deliveries").document().id
+                            val deliveryData = Delivery(
+                                deliveryId = deliveryId,
+                                orderId = orderId,
+                                driverId = null,
+                                restaurantLocation = LocationPoint(restaurantLat, restaurantLng, CartManager.restaurantName ?: "Restaurant"),
+                                buyerLocation = LocationPoint(buyerLat, buyerLng, deliveryAddress),
+                                distanceKm = distanceKm,
+                                deliveryFee = deliveryFee,
+                                status = DeliveryStatus.PENDING_ASSIGNMENT,
+                                updatedAt = System.currentTimeMillis()
+                            )
 
-                            placingOrder = false
+                            firestore.collection("deliveries").document(deliveryId).set(deliveryData)
+                                .addOnSuccessListener {
+                                    CartManager.clearCart()
+                                    placingOrder = false
 
-                            if (!isFinishing && !isDestroyed) {
-                                showMessage(
-                                    "Order placed successfully!"
-                                )
-
-                                val intent = Intent(
-                                    this@CheckoutActivity,
-                                    MainActivity::class.java
-                                ).apply {
-                                    putExtra("targetTab", 2) // Orders tab is at index 2 [Home, Cart, Orders, Profile]
-                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                    if (!isFinishing && !isDestroyed) {
+                                        showMessage("Order placed successfully!")
+                                        val intent = Intent(this@CheckoutActivity, MainActivity::class.java).apply {
+                                            putExtra("targetTab", 2)
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                                        }
+                                        startActivity(intent)
+                                        finish()
+                                    }
                                 }
-
-                                startActivity(intent)
-                                finish()
-                            }
+                                .addOnFailureListener { firestoreError ->
+                                    finishWithError("Order placed but delivery assignment failed: ${firestoreError.message}")
+                                }
                         }
                         .addOnFailureListener { saveError ->
-
-                            // Attempt to restore reserved stock
-                            // if saving the order fails.
-                            restoreStock(
-                                menuReference,
-                                requestedItems
-                            ) { restored ->
-
+                            restoreStock(menuReference, requestedItems) { restored ->
                                 val message = if (restored) {
                                     "Order failed: ${saveError.message}"
                                 } else {
-                                    "Order save failed and stock recovery " +
-                                            "needs administrator review"
+                                    "Order save failed and stock recovery needs administrator review"
                                 }
-
                                 finishWithError(message)
                             }
                         }
@@ -355,67 +296,34 @@ class CheckoutActivity : AppCompatActivity() {
         )
     }
 
-    // Compensation if the order write fails.
-    // This is NOT equivalent to an atomic server-side checkout.
     private fun restoreStock(
         menuReference: DatabaseReference,
         requestedItems: List<RequestedItem>,
         onComplete: (Boolean) -> Unit
     ) {
-
         menuReference.runTransaction(
             object : Transaction.Handler {
-
-                override fun doTransaction(
-                    currentData: MutableData
-                ): Transaction.Result {
-
+                override fun doTransaction(currentData: MutableData): Transaction.Result {
                     for (item in requestedItems) {
-
-                        val mealData =
-                            currentData.child(item.mealId)
-
-                        val currentStock =
-                            (mealData.child("stockQuantity")
-                                .value as? Number)?.toLong()
-                                ?: return Transaction.abort()
-
-                        val currentSellerId =
-                            mealData.child("sellerId")
-                                .value as? String
+                        val mealData = currentData.child(item.mealId)
+                        val currentStock = (mealData.child("stockQuantity").value as? Number)?.toLong() ?: return Transaction.abort()
+                        val currentSellerId = mealData.child("sellerId").value as? String
 
                         if (currentSellerId != item.sellerId) {
-                            return Transaction.abort()
-                        }
-
-                        if (currentStock >
-                            Long.MAX_VALUE - item.quantity.toLong()
-                        ) {
                             return Transaction.abort()
                         }
                     }
 
                     for (item in requestedItems) {
-
-                        val mealData =
-                            currentData.child(item.mealId)
-
-                        val currentStock =
-                            (mealData.child("stockQuantity")
-                                .value as Number).toLong()
-
-                        mealData.child("stockQuantity").value =
-                            currentStock + item.quantity.toLong()
+                        val mealData = currentData.child(item.mealId)
+                        val currentStock = (mealData.child("stockQuantity").value as Number).toLong()
+                        mealData.child("stockQuantity").value = currentStock + item.quantity.toLong()
                     }
 
                     return Transaction.success(currentData)
                 }
 
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
+                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                     onComplete(error == null && committed)
                 }
             },
@@ -423,21 +331,68 @@ class CheckoutActivity : AppCompatActivity() {
         )
     }
 
+    /** Loads the restaurant's and buyer's saved coordinates, then computes the delivery fee. */
+    private fun loadCoordinatesAndPrice() {
+        val buyerUid = FirebaseAuth.getInstance().currentUser?.uid
+        val sellerId = CartManager.restaurantId
+        if (buyerUid == null || sellerId.isNullOrBlank()) {
+            tvDeliveryFee.text = "Could not determine delivery locations"
+            return
+        }
+        val users = FirebaseDatabase.getInstance().getReference("users")
+
+        users.child(sellerId).get().addOnSuccessListener { sellerSnap ->
+            users.child(buyerUid).get().addOnSuccessListener { buyerSnap ->
+                if (isFinishing || isDestroyed) return@addOnSuccessListener
+
+                val seller = sellerSnap.getValue(User::class.java)
+                val buyer = buyerSnap.getValue(User::class.java)
+                restaurantLat = seller?.lat ?: 0.0
+                restaurantLng = seller?.lng ?: 0.0
+                buyerLat = buyer?.deliveryAddressDetails?.lat ?: 0.0
+                buyerLng = buyer?.deliveryAddressDetails?.lng ?: 0.0
+
+                if (restaurantLat == 0.0 && restaurantLng == 0.0) {
+                    tvDeliveryFee.text = "This restaurant hasn't set its location yet"
+                    return@addOnSuccessListener
+                }
+                if (buyerLat == 0.0 && buyerLng == 0.0) {
+                    tvDeliveryFee.text = "Set your delivery location in your Profile to see the fee"
+                    return@addOnSuccessListener
+                }
+
+                val straightKm = DeliveryCalculator.calculateDistanceKm(
+                    restaurantLat, restaurantLng, buyerLat, buyerLng
+                )
+                distanceKm = DeliveryCalculator.roadDistanceKm(straightKm)
+
+                if (!DeliveryCalculator.isInRange(distanceKm)) {
+                    tvDeliveryFee.text = "Sorry, this restaurant is too far (${String.format("%.1f", distanceKm)} km)"
+                    return@addOnSuccessListener
+                }
+
+                deliveryFee = DeliveryCalculator.calculateFee(distanceKm)
+                val itemsTotal = CartManager.getTotal()
+                tvDeliveryFee.text = "Delivery Fee: EGP $deliveryFee (${String.format("%.1f", distanceKm)} km)"
+                tvTotal.text = "Total: EGP ${itemsTotal + deliveryFee} (Items: $itemsTotal + Delivery: $deliveryFee)"
+                btnConfirmOrder.isEnabled = true
+            }.addOnFailureListener {
+                tvDeliveryFee.text = "Could not load your location"
+            }
+        }.addOnFailureListener {
+            tvDeliveryFee.text = "Could not load restaurant location"
+        }
+    }
+
     private fun loadBuyerAddress() {
-
-        val user = FirebaseAuth.getInstance()
-            .currentUser ?: return
-
+        val user = FirebaseAuth.getInstance().currentUser ?: return
         FirebaseDatabase.getInstance()
             .getReference("users")
             .child(user.uid)
             .child("address")
             .get()
             .addOnSuccessListener { snapshot ->
-
-                val address =
-                    snapshot.getValue(String::class.java)
-
+                val address = snapshot.getValue(String::class.java)
                 if (!address.isNullOrEmpty()) {
                     etDeliveryAddress.setText(address)
                 }
@@ -445,9 +400,7 @@ class CheckoutActivity : AppCompatActivity() {
     }
 
     private fun finishWithError(message: String) {
-
         placingOrder = false
-
         if (!isFinishing && !isDestroyed) {
             btnConfirmOrder.isEnabled = true
             showMessage(message)
@@ -455,20 +408,14 @@ class CheckoutActivity : AppCompatActivity() {
     }
 
     private fun showMessage(message: String) {
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_LONG
-        ).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     override fun onSupportNavigateUp(): Boolean {
-
         if (placingOrder) {
             showMessage("Order is being processed")
             return true
         }
-
         finish()
         return true
     }

@@ -45,27 +45,45 @@ android {
     }
 }
 
+
 dependencies {
-    implementation(libs.androidx.activity.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.material)
+    // Core AndroidX & UI
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.activity:activity-ktx:1.9.3")
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.database)
-    implementation("androidx.recyclerview:recyclerview:1.4.0")
+    // Lifecycle & ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
 
-    // AWS S3 SDK
-    implementation("com.amazonaws:aws-android-sdk-s3:2.73.0")
-    implementation("com.amazonaws:aws-android-sdk-core:2.73.0")
+    // Firebase (BoM manages compatible versions automatically)
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-database-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // Image loading library
-    implementation("io.coil-kt:coil:2.6.0")
+    // Google Maps & Location Services
 
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Coil Image Loading Library
+    implementation("io.coil-kt:coil:2.7.0")
+
+    // AWS SDK for Android (S3 Storage)
+    implementation("com.amazonaws:aws-android-sdk-core:2.77.0")
+    implementation("com.amazonaws:aws-android-sdk-s3:2.77.0")
+
+
+    implementation("org.maplibre.gl:android-sdk:11.11.0")
+
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }

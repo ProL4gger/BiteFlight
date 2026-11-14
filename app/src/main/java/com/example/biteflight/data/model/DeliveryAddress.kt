@@ -8,8 +8,12 @@ data class DeliveryAddress(
     val floor: String = "",
     val apartment: String = "",
     val landmark: String = "",
-    val instructions: String = ""
+    val instructions: String = "",
+    val lat: Double = 0.0,
+    val lng: Double = 0.0
 ) {
+    fun hasCoordinates(): Boolean = lat != 0.0 || lng != 0.0
+
     fun isValid(): Boolean =
         city.isNotBlank() &&
                 area.isNotBlank() &&

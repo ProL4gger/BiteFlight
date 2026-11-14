@@ -1,4 +1,3 @@
-
 package com.example.biteflight.data.repository
 
 import android.util.Log
@@ -147,6 +146,11 @@ class AuthRepository(
         if (user.role.equals(User.ROLE_BUYER, true)) {
             updates["deliveryAddressDetails"] =
                 user.deliveryAddressDetails
+        }
+
+        if (user.role.equals(User.ROLE_SELLER, true)) {
+            updates["lat"] = user.lat
+            updates["lng"] = user.lng
         }
 
         database.getReference("users")

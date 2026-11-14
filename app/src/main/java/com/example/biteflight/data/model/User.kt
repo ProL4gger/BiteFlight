@@ -12,10 +12,13 @@ data class User(
     val openingTime: String = "",
     val closingTime: String = "",
     val restaurantTimeZone: String = "Africa/Cairo",
-    val deliveryAddressDetails: DeliveryAddress = DeliveryAddress()
+    val deliveryAddressDetails: DeliveryAddress = DeliveryAddress(),
+    val lat: Double = 0.0,   // restaurant location (sellers)
+    val lng: Double = 0.0
 ) {
     companion object {
         const val ROLE_BUYER = "BUYER"
         const val ROLE_SELLER = "SELLER"
+        const val ROLE_DELIVERY = "DELIVERY" // Added for delivery driver role
     }
 }

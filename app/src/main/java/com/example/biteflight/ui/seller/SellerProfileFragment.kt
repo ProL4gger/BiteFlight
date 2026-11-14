@@ -1,5 +1,8 @@
 package com.example.biteflight.ui.seller
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -14,7 +18,9 @@ import coil.load
 import coil.transform.CircleCropTransformation
 import com.example.biteflight.R
 import com.example.biteflight.data.model.User
+import com.example.biteflight.ui.MapPickerActivity
 import com.example.biteflight.ui.auth.AuthViewModel
+import com.example.biteflight.utils.LocationHelper
 import com.example.biteflight.utils.Resource
 import com.example.biteflight.utils.S3Uploader
 import com.google.android.material.imageview.ShapeableImageView
@@ -26,6 +32,28 @@ class SellerProfileFragment : Fragment() {
     private var currentUserProfile: User? = null
     private var uploadedImageUrl: String = ""
     private var previousImageUrl: String = ""
+
+    private var pickedLat = 0.0
+    private var pickedLng = 0.0
+    private lateinit var tvLocationStatus: TextView
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) fetchCurrentLocation()
+        else Toast.makeText(requireContext(), "Location permission denied", Toast.LENGTH_SHORT).show()
+    }
+
+    private val mapPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data ?: return@registerForActivityResult
+            pickedLat = data.getDoubleExtra(MapPickerActivity.EXTRA_LAT, 0.0)
+            pickedLng = data.getDoubleExtra(MapPickerActivity.EXTRA_LNG, 0.0)
+            tvLocationStatus.text = "Location set ✓ (%.4f, %.4f)".format(pickedLat, pickedLng)
+        }
+    }
 
     private lateinit var etEditName: TextInputEditText
     private lateinit var etEditPhone: TextInputEditText
@@ -67,6 +95,23 @@ class SellerProfileFragment : Fragment() {
         btnSaveProfile = view.findViewById(R.id.btnSaveProfile)
         progressBar = view.findViewById(R.id.progressBar)
 
+        tvLocationStatus = view.findViewById(R.id.tvLocationStatus)
+        view.findViewById<Button>(R.id.btnUseLocation).setOnClickListener {
+            if (LocationHelper.hasPermission(requireContext())) fetchCurrentLocation()
+            else locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        view.findViewById<Button>(R.id.btnPickOnMap).setOnClickListener {
+            // Open the map where the seller already pinned (this session or saved), if anywhere
+            val hasPicked = pickedLat != 0.0 || pickedLng != 0.0
+            val startLat = if (hasPicked) pickedLat else (currentUserProfile?.lat ?: 0.0)
+            val startLng = if (hasPicked) pickedLng else (currentUserProfile?.lng ?: 0.0)
+            mapPickerLauncher.launch(
+                Intent(requireContext(), MapPickerActivity::class.java)
+                    .putExtra(MapPickerActivity.EXTRA_LAT, startLat)
+                    .putExtra(MapPickerActivity.EXTRA_LNG, startLng)
+            )
+        }
+
         btnUploadImage.setOnClickListener {
             selectImageLauncher.launch("image/*")
         }
@@ -82,13 +127,27 @@ class SellerProfileFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val updatedUser = profile.copy(
-                name = name,
-                phone = phone,
-                address = address,
-                imageUrl = if (uploadedImageUrl.isNotEmpty()) uploadedImageUrl else profile.imageUrl
-            )
-            viewModel.updateProfile(updatedUser)
+            btnSaveProfile.isEnabled = false
+            resolveCoordinates(address, profile.lat, profile.lng) { lat, lng ->
+                if (!isAdded) return@resolveCoordinates
+                btnSaveProfile.isEnabled = true
+                if (lat == 0.0 && lng == 0.0) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Couldn't locate this address. Use 'Pick on map' or 'Use my current location' so delivery fees work.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                val updatedUser = profile.copy(
+                    name = name,
+                    phone = phone,
+                    address = address,
+                    lat = lat,
+                    lng = lng,
+                    imageUrl = if (uploadedImageUrl.isNotEmpty()) uploadedImageUrl else profile.imageUrl
+                )
+                viewModel.updateProfile(updatedUser)
+            }
         }
 
         loadUserProfile()
@@ -102,6 +161,37 @@ class SellerProfileFragment : Fragment() {
             return
         }
         viewModel.fetchProfile(user.uid)
+    }
+
+    private fun fetchCurrentLocation() {
+        tvLocationStatus.text = "Getting location…"
+        LocationHelper.getCurrentLocation(requireContext()) { result ->
+            if (!isAdded) return@getCurrentLocation
+            if (result == null) {
+                tvLocationStatus.text = "Couldn't get location. Is GPS on?"
+                return@getCurrentLocation
+            }
+            pickedLat = result.first
+            pickedLng = result.second
+            tvLocationStatus.text = "Location set ✓ (%.4f, %.4f)".format(pickedLat, pickedLng)
+        }
+    }
+
+    /** Priority: pin picked now (map or GPS) > geocoded typed address > coordinates already saved. */
+    private fun resolveCoordinates(
+        address: String,
+        existingLat: Double,
+        existingLng: Double,
+        onDone: (Double, Double) -> Unit
+    ) {
+        if (pickedLat != 0.0 || pickedLng != 0.0) {
+            onDone(pickedLat, pickedLng)
+            return
+        }
+        LocationHelper.geocode(requireContext(), address) { result ->
+            if (result != null) onDone(result.first, result.second)
+            else onDone(existingLat, existingLng)
+        }
     }
 
     private fun uploadProfilePictureToS3(uri: Uri) {
@@ -153,6 +243,8 @@ class SellerProfileFragment : Fragment() {
                     etEditName.setText(profile.name)
                     etEditPhone.setText(profile.phone)
                     etEditAddress.setText(profile.address)
+                    tvLocationStatus.text =
+                        if (profile.lat != 0.0 || profile.lng != 0.0) "Location set ✓" else "Location not set"
 
                     if (profile.imageUrl.isNotEmpty()) {
                         ivProfilePicture.load(profile.imageUrl) {

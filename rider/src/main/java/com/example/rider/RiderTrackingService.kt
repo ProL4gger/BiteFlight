@@ -17,7 +17,6 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.functions.FirebaseFunctions
 
 /** Owns the online shift; only this service writes rider presence. */
 class RiderTrackingService : Service() {
@@ -234,7 +233,7 @@ class RiderTrackingService : Service() {
         val version = generation
         writing = true
         // Register before publishing, including after reconnection.
-        ref.onDisconnect().updateChildren(presenceData(location, false))
+        ref.onDisconnect().setValue(presenceData(location, false))
             .addOnSuccessListener disconnectReady@{
                 if (destroyed || stopping || version != generation) return@disconnectReady
                 if (!isFresh(location)) {
@@ -290,16 +289,30 @@ class RiderTrackingService : Service() {
             return
         }
         stopChecking = true
-        // Pause new presence writes while the server atomically checks the assignment
-        // and sets offline. Dispatch uses the same transaction boundary.
+        // Publish offline before checking the lock: rules reject any new reservation
+        // once presence is offline. Existing assignments still block ending a shift.
         endingShift = true
         generation++
         writing = false
-        FirebaseFunctions.getInstance().getHttpsCallable("endRiderShift").call()
+        val offline = presence?.updateChildren(mapOf("online" to false, "updatedAt" to ServerValue.TIMESTAMP))
+        if (offline == null) {
+            stopChecking = false
+            endingShift = false
+            return
+        }
+        offline.continueWithTask { task ->
+            if (!task.isSuccessful) throw task.exception ?: IllegalStateException("Could not save offline status")
+            database.getReference("delivery/riders").child(uid!!).child("currentOrderId").get()
+        }
             .addOnSuccessListener {
                 stopChecking = false
                 if (destroyed) return@addOnSuccessListener
-                stopShift()
+                if (!it.getValue(String::class.java).isNullOrBlank()) {
+                    endingShift = false
+                    current = current.copy(error = "Finish your delivery before going offline")
+                    publish()
+                    requestFreshLocation()
+                } else stopShift()
             }
             .addOnFailureListener {
                 stopChecking = false

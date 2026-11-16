@@ -1,4 +1,3 @@
 {
-  "functions": [{"source": "functions", "codebase": "delivery"}],
   "database": {"rules": "database-v2.rules.json"}
 }

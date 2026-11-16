@@ -241,11 +241,18 @@ class CheckoutActivity : AppCompatActivity() {
                     // 1. Save the order in Realtime Database
                     database.reference.updateChildren(mapOf(
                         "orders/$sellerId/$orderId" to order,
-                        "buyerOrders/$buyerId/$orderId" to sellerId
+                        "buyerOrders/$buyerId/$orderId" to sellerId,
+                        "deliveryQueue/$orderId" to mapOf(
+                            "sellerId" to sellerId,
+                            "buyerId" to buyerId,
+                            "pickupLat" to restaurantLat,
+                            "pickupLng" to restaurantLng,
+                            "createdAt" to com.google.firebase.database.ServerValue.TIMESTAMP
+                        )
                     ))
                         .addOnSuccessListener {
 
-                            // The server assigns a rider from this canonical order.
+                            // Online rider dashboards claim the waiting queue entry.
                             CartManager.clearCart()
                             placingOrder = false
 

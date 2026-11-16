@@ -47,11 +47,19 @@
         ".read": "auth != null && auth.uid === $sellerId",
         ".indexOn": ["buyerId"],
         "$orderId": {
-          ".read": "auth != null && data.child('buyerId').val() === auth.uid",
+          ".read": "auth != null && (data.child('buyerId').val() === auth.uid || ((root.child('users/riders').child(auth.uid).child('role').val() === 'rider' || root.child('users/riders').child(auth.uid).child('role').val() === 'Rider' || root.child('users/riders').child(auth.uid).child('role').val() === 'RIDER') && (data.child('riderId').val() === auth.uid || (data.child('status').val() === 'PLACED' && root.child('delivery/riders').child(auth.uid).child('currentOrderId').val() === $orderId && root.child('delivery/riders').child(auth.uid).child('sellerId').val() === $sellerId))))",
           ".write": "auth != null && !data.exists() && root.child('users/buyers').child(auth.uid).exists() && newData.child('buyerId').val() === auth.uid && root.child('users/sellers').child($sellerId).exists() && newData.child('status').val() === 'PLACED'",
           ".validate": "newData.hasChildren(['id', 'buyerId', 'sellerId', 'items', 'total', 'status']) && newData.child('id').val() === $orderId && newData.child('sellerId').val() === $sellerId",
           "status": {
-            ".write": false
+            ".write": "auth != null && root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider' && data.parent().child('riderId').val() === auth.uid && root.child('delivery/riders').child(auth.uid).child('currentOrderId').val() === $orderId && root.child('delivery/riders').child(auth.uid).child('sellerId').val() === $sellerId && ((data.val() === 'PLACED' && newData.val() === 'ASSIGNED') || (data.val() === 'ASSIGNED' && newData.val() === 'WAITING_AT_RESTAURANT') || (data.val() === 'WAITING_AT_RESTAURANT' && newData.val() === 'PICKED_UP') || (data.val() === 'PICKED_UP' && newData.val() === 'IN_AREA') || (data.val() === 'IN_AREA' && newData.val() === 'DELIVERED'))"
+          },
+          "riderId": {
+            ".write": "auth != null && root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider' && data.parent().child('status').val() === 'PLACED' && (!data.exists() || data.val() === '' || data.val() === auth.uid) && newData.val() === auth.uid && root.child('delivery/riders').child(auth.uid).child('currentOrderId').val() === $orderId && root.child('delivery/riders').child(auth.uid).child('sellerId').val() === $sellerId",
+            ".validate": "(!data.parent().exists() && newData.val() === '') || (data.parent().exists() && newData.isString() && newData.val() === auth.uid)"
+          },
+          "updatedAt": {
+            ".write": "auth != null && data.parent().child('riderId').val() === auth.uid && root.child('delivery/riders').child(auth.uid).child('currentOrderId').val() === $orderId && root.child('delivery/riders').child(auth.uid).child('sellerId').val() === $sellerId && root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider'",
+            ".validate": "newData.isNumber() && ((!data.parent().exists() && newData.val() === 0) || (data.parent().exists() && newData.val() >= now - 120000 && newData.val() <= now + 30000))"
           }
         }
       }
@@ -76,11 +84,28 @@
         "updatedAt": { ".validate": "newData.isNumber() && newData.val() > now - 120000 && newData.val() <= now + 30000" }
       }
     },
+    "deliveryQueue": {
+      ".read": "auth != null && root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider'",
+      "$orderId": {
+        ".write": "auth != null && ((!data.exists() && newData.exists() && root.child('users/buyers').child(auth.uid).exists() && newData.child('buyerId').val() === auth.uid) || (!newData.exists() && data.exists() && (data.child('buyerId').val() === auth.uid || (root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider' && root.child('orders').child(data.child('sellerId').val()).child($orderId).child('riderId').isString() && root.child('orders').child(data.child('sellerId').val()).child($orderId).child('riderId').val() !== ''))))",
+        ".validate": "newData.hasChildren(['sellerId','buyerId','pickupLat','pickupLng','createdAt']) && newData.parent().parent().child('orders').child(newData.child('sellerId').val()).child($orderId).child('buyerId').val() === auth.uid && newData.parent().parent().child('orders').child(newData.child('sellerId').val()).child($orderId).child('status').val() === 'PLACED'",
+        "sellerId": { ".validate": "newData.isString() && root.child('restaurants').child(newData.val()).exists()" },
+        "buyerId": { ".validate": "newData.val() === auth.uid" },
+        "pickupLat": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
+        "pickupLng": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+        "createdAt": { ".validate": "newData.isNumber() && newData.val() >= now - 120000 && newData.val() <= now + 30000" },
+        "$other": { ".validate": false }
+      }
+    },
     "delivery": {
       "riders": {
         "$riderId": {
           ".read": "auth != null && auth.uid === $riderId",
-          ".write": false
+          ".write": "auth != null && auth.uid === $riderId && root.child('users/riders').child(auth.uid).child('role').val().toLowerCase() === 'rider' && ((!data.child('currentOrderId').exists() && newData.exists() && root.child('riderPresence').child(auth.uid).child('online').val() === true && root.child('riderPresence').child(auth.uid).child('updatedAt').val() >= now - 120000 && root.child('deliveryQueue').child(newData.child('currentOrderId').val()).child('sellerId').val() === newData.child('sellerId').val() && root.child('orders').child(newData.child('sellerId').val()).child(newData.child('currentOrderId').val()).child('status').val() === 'PLACED' && (!root.child('orders').child(newData.child('sellerId').val()).child(newData.child('currentOrderId').val()).child('riderId').exists() || root.child('orders').child(newData.child('sellerId').val()).child(newData.child('currentOrderId').val()).child('riderId').val() === '')) || (!newData.exists() && data.exists() && (root.child('orders').child(data.child('sellerId').val()).child(data.child('currentOrderId').val()).child('riderId').val() !== auth.uid || root.child('orders').child(data.child('sellerId').val()).child(data.child('currentOrderId').val()).child('status').val() === 'DELIVERED' || root.child('orders').child(data.child('sellerId').val()).child(data.child('currentOrderId').val()).child('status').val() === 'COMPLETED')))",
+          ".validate": "newData.hasChildren(['currentOrderId','sellerId'])",
+          "currentOrderId": { ".validate": "newData.isString()" },
+          "sellerId": { ".validate": "newData.isString()" },
+          "$other": { ".validate": false }
         }
       },
       "jobs": {

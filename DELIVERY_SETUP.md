@@ -1,5 +1,9 @@
 # Rider assignment and buyer delivery updates
 
+> Superseded by **SPARK_DELIVERY_SETUP.md**. The active apps now use Kotlin and
+> Realtime Database directly. The Cloud Functions deployment instructions below
+> describe the retired implementation and must not be followed for the Spark flow.
+
 ## Implemented flow
 
 Checkout saves only the canonical Realtime Database order and buyer index.

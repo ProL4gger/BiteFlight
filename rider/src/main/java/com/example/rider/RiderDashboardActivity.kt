@@ -15,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.functions.FirebaseFunctions
 
 class RiderDashboardActivity : AppCompatActivity() {
     private val auth = FirebaseAuth.getInstance()
@@ -37,6 +36,8 @@ class RiderDashboardActivity : AppCompatActivity() {
     private var jobRef: DatabaseReference? = null
     private var jobListener: ValueEventListener? = null
     private var currentOrderId: String? = null
+    private var currentSellerId: String? = null
+    private var deliveries: RiderDeliveryRepository? = null
     private var nextStage: String? = null
     private var updatingStage = false
     private val stages = listOf("ASSIGNED", "WAITING_AT_RESTAURANT", "PICKED_UP", "IN_AREA", "DELIVERED")
@@ -73,6 +74,9 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnRefresh = findViewById(R.id.btnRefreshLocation)
         btnLogout = findViewById(R.id.btnLogout)
         btnDeliveryStage = findViewById(R.id.btnDeliveryStage)
+        deliveries = RiderDeliveryRepository(uid) { message ->
+            if (!isFinishing && !isDestroyed) showMessage(message)
+        }
         btnDeliveryStage.setOnClickListener {
             val orderId = currentOrderId ?: return@setOnClickListener
             val target = nextStage ?: return@setOnClickListener
@@ -95,10 +99,11 @@ class RiderDashboardActivity : AppCompatActivity() {
             } else finishLogout()
         }
         assignmentRef = FirebaseDatabase.getInstance()
-            .getReference("delivery/riders").child(uid).child("currentOrderId")
+            .getReference("delivery/riders").child(uid)
         assignmentListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val orderId = snapshot.getValue(String::class.java)
+                val orderId = snapshot.child("currentOrderId").getValue(String::class.java)
+                currentSellerId = snapshot.child("sellerId").getValue(String::class.java)
                 assignmentLoaded = true
                 isBusy = !orderId.isNullOrBlank()
                 tvOrder.text = if (isBusy) "Assigned Order: $orderId" else "No orders assigned yet"
@@ -147,8 +152,13 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnDeliveryStage.visibility = if (orderId == null) View.GONE else View.VISIBLE
         btnDeliveryStage.isEnabled = false
         if (orderId == null) return
+        val seller = currentSellerId
+        if (seller.isNullOrBlank()) {
+            tvOrder.text = "Assignment needs a restaurant ID. Ask the project owner to review it."
+            return
+        }
         tvOrder.text = "Loading delivery $orderId…"
-        jobRef = FirebaseDatabase.getInstance().getReference("delivery/jobs").child(orderId)
+        jobRef = FirebaseDatabase.getInstance().getReference("orders").child(seller).child(orderId)
         jobListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (currentOrderId != orderId) return
@@ -158,6 +168,7 @@ class RiderDashboardActivity : AppCompatActivity() {
                 } else {
                     fun field(name: String) = snapshot.child(name).getValue(String::class.java).orEmpty()
                     val status = field("status")
+                    if (status == "DELIVERED") deliveries?.refresh()
                     val index = stages.indexOf(status)
                     nextStage = stages.getOrNull(index + 1).takeIf { index >= 0 }
                     val items = snapshot.child("items").children.joinToString("\n") {
@@ -165,7 +176,7 @@ class RiderDashboardActivity : AppCompatActivity() {
                     }
                     tvOrder.text = "Order #${orderId.takeLast(6).uppercase()}\n" +
                         "Status: ${status.replace('_', ' ')}\n\n" +
-                        "Pickup: ${field("restaurantName")}\n${field("pickupAddress")}\n\n" +
+                        "Pickup: ${field("restaurantName")}\n\n" +
                         "Deliver to: ${field("deliveryAddress")}\n\n$items\n\n" +
                         "Total: EGP ${snapshot.child("total").value ?: "—"}"
                 }
@@ -194,10 +205,15 @@ class RiderDashboardActivity : AppCompatActivity() {
     }
 
     private fun advanceDelivery(orderId: String, target: String) {
+        val repository = deliveries ?: return
         updatingStage = true
         updateDeliveryButton()
-        FirebaseFunctions.getInstance().getHttpsCallable("advanceDelivery")
-            .call(mapOf("orderId" to orderId, "status" to target))
+        val seller = currentSellerId ?: run {
+            updatingStage = false
+            updateDeliveryButton()
+            return
+        }
+        repository.advance(seller, orderId, target)
             .addOnCompleteListener(this) { task ->
                 updatingStage = false
                 if (!task.isSuccessful) showMessage(task.exception?.localizedMessage ?: "Could not save stage")
@@ -253,6 +269,8 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnOnline.isEnabled = ready && (!state.running || !isBusy) && (!state.running || state.connected)
         btnLogout.isEnabled = ready && !isBusy && (!state.running || state.connected)
         btnRefresh.isEnabled = state.running && !state.stopping
+        deliveries?.setAvailable(state.running && state.online && state.connected && !state.stopping,
+            state.latitude, state.longitude)
         updateDeliveryButton()
     }
 
@@ -269,6 +287,15 @@ class RiderDashboardActivity : AppCompatActivity() {
     }
     private fun showMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
+    override fun onStart() {
+        super.onStart()
+        deliveries?.start()
+        if (::tvStatus.isInitialized) updateUI()
+    }
+    override fun onStop() {
+        deliveries?.stop()
+        super.onStop()
     }
     override fun onDestroy() {
         assignmentListener?.let { assignmentRef?.removeEventListener(it) }

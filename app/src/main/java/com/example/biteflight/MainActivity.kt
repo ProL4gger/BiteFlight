@@ -22,7 +22,8 @@ import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.ui.buyer.BuyerNavigation
 import com.example.biteflight.ui.buyer.BuyerPagerAdapter
 import com.example.biteflight.ui.seller.SellerDashboardActivity
-import com.example.biteflight.utils.BuyerPushRegistration
+import com.example.biteflight.utils.BuyerOrderAlerts
+import androidx.lifecycle.Lifecycle
 import com.example.biteflight.utils.Resource
 import com.google.firebase.auth.FirebaseAuth
 
@@ -31,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var pagerAdapter: BuyerPagerAdapter
     private lateinit var deliveryContainer: FrameLayout
+    private val orderAlerts by lazy { BuyerOrderAlerts(this) }
+    private var buyerReady = false
 
     private val notificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -126,7 +129,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupBuyerWorkflow() {
-        BuyerPushRegistration.register()
+        buyerReady = true
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) startOrderAlerts()
 
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -162,6 +166,20 @@ class MainActivity : AppCompatActivity() {
         if (targetTab in 0..3) {
             setViewPagerItem(targetTab)
         }
+    }
+
+    private fun startOrderAlerts() {
+        if (buyerReady) FirebaseAuth.getInstance().currentUser?.uid?.let { orderAlerts.start(it) }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        startOrderAlerts()
+    }
+
+    override fun onStop() {
+        orderAlerts.stop()
+        super.onStop()
     }
 
     fun setViewPagerItem(index: Int) {

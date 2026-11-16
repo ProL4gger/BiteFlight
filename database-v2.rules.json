@@ -1,0 +1,101 @@
+{
+  "rules": {
+    "users": {
+      "buyers": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && newData.exists() && ((!data.exists() && (newData.child('role').val() === 'BUYER' || newData.child('role').val() === 'Buyer' || newData.child('role').val() === 'buyer')) || (data.exists() && newData.child('role').val() === data.child('role').val()))",
+          ".validate": "newData.child('uid').val() === $uid && !newData.parent().parent().child('sellers').child($uid).exists() && !newData.parent().parent().child('riders').child($uid).exists()"
+        }
+      },
+      "sellers": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && newData.exists() && ((!data.exists() && (newData.child('role').val() === 'SELLER' || newData.child('role').val() === 'Seller' || newData.child('role').val() === 'seller')) || (data.exists() && newData.child('role').val() === data.child('role').val()))",
+          ".validate": "newData.child('uid').val() === $uid && !newData.parent().parent().child('buyers').child($uid).exists() && !newData.parent().parent().child('riders').child($uid).exists()"
+        }
+      },
+      "riders": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && newData.exists() && ((!data.exists() && newData.child('role').val() === 'pending_rider') || (data.exists() && newData.child('role').val() === data.child('role').val()))",
+          ".validate": "newData.child('uid').val() === $uid && !newData.parent().parent().child('buyers').child($uid).exists() && !newData.parent().parent().child('sellers').child($uid).exists()"
+        }
+      }
+    },
+    "restaurants": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.child('uid').val() === $uid && newData.child('role').val() === 'SELLER' && newData.parent().parent().child('users/sellers').child($uid).exists()"
+      }
+    },
+    "menuItems": {
+      ".read": "auth != null",
+      "$sellerId": {
+        ".write": "auth != null",
+        "$mealId": {
+          ".validate": "newData.child('sellerId').val() === $sellerId && newData.child('id').val() === $mealId",
+          "stockQuantity": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0"
+          }
+        }
+      }
+    },
+    "orders": {
+      "$sellerId": {
+        ".read": "auth != null && auth.uid === $sellerId",
+        ".indexOn": ["buyerId"],
+        "$orderId": {
+          ".read": "auth != null && data.child('buyerId').val() === auth.uid",
+          ".write": "auth != null && !data.exists() && root.child('users/buyers').child(auth.uid).exists() && newData.child('buyerId').val() === auth.uid && root.child('users/sellers').child($sellerId).exists() && newData.child('status').val() === 'PLACED'",
+          ".validate": "newData.hasChildren(['id', 'buyerId', 'sellerId', 'items', 'total', 'status']) && newData.child('id').val() === $orderId && newData.child('sellerId').val() === $sellerId",
+          "status": {
+            ".write": "auth != null && auth.uid === $sellerId && data.exists() && newData.val() === 'COMPLETED'"
+          }
+        }
+      }
+    },
+    "buyerOrders": {
+      "$buyerId": {
+        ".read": "auth != null && auth.uid === $buyerId",
+        "$orderId": {
+          ".write": "auth != null && auth.uid === $buyerId && !data.exists() && newData.isString() && root.child('users/buyers').child($buyerId).exists()",
+          ".validate": "newData.isString() && root.child('users/sellers').child(newData.val()).exists()"
+        }
+      }
+    },
+    "riderPresence": {
+      "$riderId": {
+        ".read": "auth != null && auth.uid === $riderId",
+        ".write": "auth != null && auth.uid === $riderId && (root.child('users/riders').child(auth.uid).child('role').val() === 'rider' || root.child('users/riders').child(auth.uid).child('role').val() === 'Rider' || root.child('users/riders').child(auth.uid).child('role').val() === 'RIDER')",
+        ".validate": "newData.hasChildren(['online', 'latitude', 'longitude', 'updatedAt'])",
+        "online": { ".validate": "newData.isBoolean()" },
+        "latitude": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
+        "longitude": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+        "updatedAt": { ".validate": "newData.isNumber() && newData.val() > now - 120000 && newData.val() <= now + 30000" }
+      }
+    },
+    "delivery": {
+      "riders": {
+        "$riderId": {
+          ".read": "auth != null && auth.uid === $riderId",
+          ".write": false
+        }
+      },
+      "jobs": {
+        "$orderId": {
+          ".read": "auth != null && (data.child('buyerId').val() === auth.uid || data.child('sellerId').val() === auth.uid || data.child('riderId').val() === auth.uid)",
+          ".write": false
+        }
+      }
+    },
+    "fcmTokens": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length < 4096"
+      }
+    }
+  }
+}

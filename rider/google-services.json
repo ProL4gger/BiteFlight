@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "534623241494",
+    "firebase_url": "https://biteflight-e6426-default-rtdb.firebaseio.com",
+    "project_id": "biteflight-e6426",
+    "storage_bucket": "biteflight-e6426.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534623241494:android:14ef8ed3145da8f260fc37",
+        "android_client_info": {
+          "package_name": "com.example.biteflight"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzI5q6mgMSlZou9y5Ma_ID3pQ_-iHaYpw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534623241494:android:81aad83f2c83c7cc60fc37",
+        "android_client_info": {
+          "package_name": "com.example.rider"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzI5q6mgMSlZou9y5Ma_ID3pQ_-iHaYpw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

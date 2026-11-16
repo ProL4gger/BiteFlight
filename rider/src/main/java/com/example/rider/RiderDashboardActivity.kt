@@ -1,9 +1,9 @@
 package com.example.rider
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -11,305 +11,179 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
-import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
 class RiderDashboardActivity : AppCompatActivity() {
-
     private val auth = FirebaseAuth.getInstance()
-    private val database = FirebaseDatabase.getInstance()
-
-    private val locationClient by lazy {
-        LocationServices.getFusedLocationProviderClient(this)
-    }
-
     private lateinit var tvStatus: TextView
     private lateinit var tvLocation: TextView
     private lateinit var tvOrder: TextView
     private lateinit var btnOnline: Button
     private lateinit var btnRefresh: Button
-
-    private var isOnline = false
-    private var isBusy = false
-
-    private var latitude: Double? = null
-    private var longitude: Double? = null
-
-    private var riderRef: DatabaseReference? = null
+    private lateinit var btnLogout: Button
     private var assignmentRef: DatabaseReference? = null
     private var assignmentListener: ValueEventListener? = null
+    private var assignmentLoaded = false
+    private var isBusy = false
+    private var startRequested = false
+    private var logoutRequested = false
+    private var lastError: String? = null
+    private var state = RiderTrackingService.TrackingState()
 
-    private val locationPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { result ->
-
-            val granted = result.values.any { it }
-
-            if (granted) {
-                getCurrentLocation()
-            } else {
-                showMessage("Location permission is required")
-            }
+    private val locationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        if (result.values.any { it }) requestNotificationAndStart()
+        else {
+            startRequested = false
+            showMessage("Location permission is required to go online")
+            updateUI()
         }
+    }
+    private val notificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) showMessage("Enable notifications in Settings to see your tracking notification")
+        startTracking()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_rider_dashboard)
-
         val uid = auth.currentUser?.uid
-
         if (uid == null) {
             openLogin()
             return
         }
-
+        setContentView(R.layout.activity_rider_dashboard)
         tvStatus = findViewById(R.id.tvStatus)
         tvLocation = findViewById(R.id.tvLocation)
         tvOrder = findViewById(R.id.tvOrder)
         btnOnline = findViewById(R.id.btnOnline)
         btnRefresh = findViewById(R.id.btnRefreshLocation)
-
-        riderRef = database.getReference("riderPresence")
-            .child(uid)
-
+        btnLogout = findViewById(R.id.btnLogout)
         btnOnline.setOnClickListener {
-            if (isOnline) {
-                goOffline()
-            } else {
-                goOnline()
-            }
+            if (state.running) sendCommand(RiderTrackingService.ACTION_STOP) else requestOnline()
         }
-
-        btnRefresh.setOnClickListener {
-            getCurrentLocation()
+        btnRefresh.setOnClickListener { sendCommand(RiderTrackingService.ACTION_REFRESH) }
+        btnLogout.setOnClickListener {
+            if (state.running) {
+                logoutRequested = true
+                sendCommand(RiderTrackingService.ACTION_STOP)
+            } else finishLogout()
         }
-
-        findViewById<Button>(R.id.btnLogout)
-            .setOnClickListener {
-                goOffline {
-                    auth.signOut()
-                    openLogin()
-                }
-            }
-
-        observeAssignedOrders(uid)
-        updateStatusUI()
-    }
-
-    private fun hasLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun getCurrentLocation(
-        onSuccess: (() -> Unit)? = null
-    ) {
-        if (!hasLocationPermission()) {
-            locationPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-            return
-        }
-
-        fetchLocation(onSuccess)
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun fetchLocation(
-        onSuccess: (() -> Unit)?
-    ) {
-        val tokenSource = CancellationTokenSource()
-
-        locationClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            tokenSource.token
-        ).addOnSuccessListener { location ->
-
-            if (location == null) {
-                tvLocation.text =
-                    "Could not get location. Try again."
-                return@addOnSuccessListener
-            }
-
-            latitude = location.latitude
-            longitude = location.longitude
-
-            tvLocation.text =
-                "Latitude: ${location.latitude}\n" +
-                        "Longitude: ${location.longitude}"
-
-            if (isOnline) {
-                saveRiderPresence()
-            }
-
-            onSuccess?.invoke()
-
-        }.addOnFailureListener {
-            tvLocation.text = "GPS error: ${it.message}"
-        }
-    }
-
-    private fun goOnline() {
-        if (isBusy) {
-            showMessage("You already have an active delivery")
-            return
-        }
-
-        getCurrentLocation {
-            isOnline = true
-            saveRiderPresence()
-            updateStatusUI()
-        }
-    }
-
-    private fun goOffline(
-        onFinished: (() -> Unit)? = null
-    ) {
-        if (isBusy) {
-            showMessage("Finish your delivery before going offline")
-            return
-        }
-
-        val ref = riderRef
-
-        if (ref == null) {
-            onFinished?.invoke()
-            return
-        }
-
-        val updates = mapOf<String, Any>(
-            "online" to false,
-            "updatedAt" to ServerValue.TIMESTAMP
-        )
-
-        ref.updateChildren(updates)
-            .addOnSuccessListener {
-                isOnline = false
-                updateStatusUI()
-                onFinished?.invoke()
-            }
-            .addOnFailureListener {
-                showMessage("Could not update status")
-            }
-    }
-
-    private fun saveRiderPresence() {
-        val lat = latitude ?: return
-        val lng = longitude ?: return
-        val ref = riderRef ?: return
-
-        val data = mapOf<String, Any>(
-            "online" to isOnline,
-            "latitude" to lat,
-            "longitude" to lng,
-            "updatedAt" to ServerValue.TIMESTAMP
-        )
-
-        ref.updateChildren(data)
-            .addOnSuccessListener {
-                if (isOnline) {
-                    ref.onDisconnect().updateChildren(
-                        mapOf("online" to false)
-                    )
-                }
-            }
-            .addOnFailureListener {
-                isOnline = false
-                updateStatusUI()
-                showMessage("Firebase update failed")
-            }
-    }
-
-    private fun observeAssignedOrders(uid: String) {
-        val ref = database.getReference("delivery")
-            .child("riders")
-            .child(uid)
-            .child("currentOrderId")
-
-        assignmentRef = ref
-
-        val listener = object : ValueEventListener {
-
+        assignmentRef = FirebaseDatabase.getInstance()
+            .getReference("delivery/riders").child(uid).child("currentOrderId")
+        assignmentListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val orderId =
-                    snapshot.getValue(String::class.java)
-
+                val orderId = snapshot.getValue(String::class.java)
+                assignmentLoaded = true
                 isBusy = !orderId.isNullOrBlank()
-
-                tvOrder.text = if (isBusy) {
-                    "Assigned Order: $orderId"
-                } else {
-                    "No orders assigned yet"
-                }
-
-                updateStatusUI()
+                tvOrder.text = if (isBusy) "Assigned Order: $orderId" else "No orders assigned yet"
+                updateUI()
             }
-
             override fun onCancelled(error: DatabaseError) {
-                tvOrder.text =
-                    "Unable to load assignments: ${error.message}"
+                assignmentLoaded = false
+                tvOrder.text = "Unable to load assignments: ${error.message}"
+                updateUI()
             }
         }
-
-        assignmentListener = listener
-        ref.addValueEventListener(listener)
+        assignmentRef?.addValueEventListener(assignmentListener!!)
+        RiderTrackingService.state.observe(this) { next ->
+            if (next.uid != null && next.uid != auth.currentUser?.uid) return@observe
+            state = next
+            if (next.running || next.error != null) startRequested = false
+            if (next.error != null && next.error != lastError) {
+                logoutRequested = false
+                showMessage(next.error)
+            }
+            lastError = next.error
+            if (logoutRequested && !next.running) finishLogout() else updateUI()
+        }
+        updateUI()
     }
 
-    private fun updateStatusUI() {
+    private fun requestOnline() {
+        if (!assignmentLoaded || startRequested) return
+        startRequested = true
+        updateUI()
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (fine != PackageManager.PERMISSION_GRANTED && coarse != PackageManager.PERMISSION_GRANTED) {
+            locationPermission.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
+            ))
+        } else requestNotificationAndStart()
+    }
+
+    private fun requestNotificationAndStart() {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        else startTracking()
+    }
+
+    private fun startTracking() {
+        try {
+            ContextCompat.startForegroundService(this, Intent(this, RiderTrackingService::class.java)
+                .setAction(RiderTrackingService.ACTION_START))
+        } catch (error: RuntimeException) {
+            startRequested = false
+            showMessage("Could not start tracking: ${error.localizedMessage}")
+            updateUI()
+        }
+    }
+
+    private fun sendCommand(action: String) {
+        if (!state.running) return
+        try {
+            startService(Intent(this, RiderTrackingService::class.java).setAction(action))
+        } catch (error: RuntimeException) {
+            logoutRequested = false
+            showMessage("Could not update tracking: ${error.localizedMessage}")
+        }
+    }
+
+    private fun updateUI() {
+        if (!::tvStatus.isInitialized) return
         tvStatus.text = when {
-            isBusy -> "BUSY"
-            isOnline -> "ONLINE"
+            startRequested -> "STARTING TRACKING"
+            state.running && state.stopping -> "GOING OFFLINE"
+            state.running && !state.connected -> "NO CONNECTION"
+            state.running && state.online && isBusy -> "BUSY"
+            state.running -> state.status
             else -> "OFFLINE"
         }
-
-        btnOnline.text = if (isOnline) {
-            "Go Offline"
-        } else {
-            "Go Online"
+        if (state.latitude != null && state.longitude != null) {
+            tvLocation.text = "Latitude: ${state.latitude}\nLongitude: ${state.longitude}"
         }
-
-        btnOnline.isEnabled = !isBusy
+        btnOnline.text = if (state.running) "Go Offline" else "Go Online"
+        val ready = assignmentLoaded && !startRequested && !state.stopping
+        // Busy riders may restart tracking after an OS stop, but cannot end a shift.
+        btnOnline.isEnabled = ready && (!state.running || !isBusy) && (!state.running || state.connected)
+        btnLogout.isEnabled = ready && !isBusy && (!state.running || state.connected)
+        btnRefresh.isEnabled = state.running && !state.stopping
     }
 
+    private fun finishLogout() {
+        logoutRequested = false
+        auth.signOut()
+        openLogin()
+    }
     private fun openLogin() {
-        val intent = Intent(
-            this,
-            RiderLoginActivity::class.java
-        )
-
-        intent.flags =
-            Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-        startActivity(intent)
+        startActivity(Intent(this, RiderLoginActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
         finish()
     }
-
     private fun showMessage(message: String) {
-        Toast.makeText(
-            this,
-            message,
-            Toast.LENGTH_SHORT
-        ).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
-
     override fun onDestroy() {
-        assignmentListener?.let { listener ->
-            assignmentRef?.removeEventListener(listener)
-        }
+        assignmentListener?.let { assignmentRef?.removeEventListener(it) }
+        // The foreground service survives dashboard destruction.
         super.onDestroy()
     }
 }
+

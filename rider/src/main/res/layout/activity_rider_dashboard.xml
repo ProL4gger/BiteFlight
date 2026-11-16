@@ -80,6 +80,14 @@
             android:textSize="16sp"
             android:layout_marginTop="12dp"/>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="While online, your location is shared even when you switch apps or lock your phone. Tap Go Offline to stop sharing."
+            android:textColor="#777080"
+            android:textSize="14sp"
+            android:layout_marginTop="8dp"/>
+
         <Button
             android:id="@+id/btnRefreshLocation"
             android:layout_width="match_parent"

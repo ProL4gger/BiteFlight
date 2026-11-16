@@ -51,7 +51,7 @@
           ".write": "auth != null && !data.exists() && root.child('users/buyers').child(auth.uid).exists() && newData.child('buyerId').val() === auth.uid && root.child('users/sellers').child($sellerId).exists() && newData.child('status').val() === 'PLACED'",
           ".validate": "newData.hasChildren(['id', 'buyerId', 'sellerId', 'items', 'total', 'status']) && newData.child('id').val() === $orderId && newData.child('sellerId').val() === $sellerId",
           "status": {
-            ".write": "auth != null && auth.uid === $sellerId && data.exists() && newData.val() === 'COMPLETED'"
+            ".write": false
           }
         }
       }
@@ -87,6 +87,15 @@
         "$orderId": {
           ".read": "auth != null && (data.child('buyerId').val() === auth.uid || data.child('sellerId').val() === auth.uid || data.child('riderId').val() === auth.uid)",
           ".write": false
+        }
+      }
+    },
+    "buyerPushTokens": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$tokenId": {
+          ".write": "auth != null && auth.uid === $uid && root.child('users/buyers').child($uid).exists()",
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length < 4096"
         }
       }
     },

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
+import androidx.appcompat.app.AlertDialog
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -13,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.functions.FirebaseFunctions
 
 class RiderDashboardActivity : AppCompatActivity() {
     private val auth = FirebaseAuth.getInstance()
@@ -30,6 +33,13 @@ class RiderDashboardActivity : AppCompatActivity() {
     private var logoutRequested = false
     private var lastError: String? = null
     private var state = RiderTrackingService.TrackingState()
+    private lateinit var btnDeliveryStage: Button
+    private var jobRef: DatabaseReference? = null
+    private var jobListener: ValueEventListener? = null
+    private var currentOrderId: String? = null
+    private var nextStage: String? = null
+    private var updatingStage = false
+    private val stages = listOf("ASSIGNED", "WAITING_AT_RESTAURANT", "PICKED_UP", "IN_AREA", "DELIVERED")
 
     private val locationPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -62,6 +72,18 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnOnline = findViewById(R.id.btnOnline)
         btnRefresh = findViewById(R.id.btnRefreshLocation)
         btnLogout = findViewById(R.id.btnLogout)
+        btnDeliveryStage = findViewById(R.id.btnDeliveryStage)
+        btnDeliveryStage.setOnClickListener {
+            val orderId = currentOrderId ?: return@setOnClickListener
+            val target = nextStage ?: return@setOnClickListener
+            if (updatingStage) return@setOnClickListener
+            if (target == "DELIVERED") {
+                AlertDialog.Builder(this).setTitle("Confirm delivery")
+                    .setMessage("Have you handed the order to the customer?")
+                    .setPositiveButton("Delivered") { _, _ -> advanceDelivery(orderId, target) }
+                    .setNegativeButton("Cancel", null).show()
+            } else advanceDelivery(orderId, target)
+        }
         btnOnline.setOnClickListener {
             if (state.running) sendCommand(RiderTrackingService.ACTION_STOP) else requestOnline()
         }
@@ -80,10 +102,12 @@ class RiderDashboardActivity : AppCompatActivity() {
                 assignmentLoaded = true
                 isBusy = !orderId.isNullOrBlank()
                 tvOrder.text = if (isBusy) "Assigned Order: $orderId" else "No orders assigned yet"
+                observeDelivery(orderId?.takeIf { it.isNotBlank() })
                 updateUI()
             }
             override fun onCancelled(error: DatabaseError) {
                 assignmentLoaded = false
+                observeDelivery(null)
                 tvOrder.text = "Unable to load assignments: ${error.message}"
                 updateUI()
             }
@@ -114,6 +138,71 @@ class RiderDashboardActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
             ))
         } else requestNotificationAndStart()
+    }
+
+    private fun observeDelivery(orderId: String?) {
+        jobListener?.let { jobRef?.removeEventListener(it) }
+        currentOrderId = orderId
+        nextStage = null
+        btnDeliveryStage.visibility = if (orderId == null) View.GONE else View.VISIBLE
+        btnDeliveryStage.isEnabled = false
+        if (orderId == null) return
+        tvOrder.text = "Loading delivery $orderId…"
+        jobRef = FirebaseDatabase.getInstance().getReference("delivery/jobs").child(orderId)
+        jobListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (currentOrderId != orderId) return
+                if (!snapshot.exists() || snapshot.child("riderId").value != auth.currentUser?.uid) {
+                    tvOrder.text = "Delivery details unavailable"
+                    nextStage = null
+                } else {
+                    fun field(name: String) = snapshot.child(name).getValue(String::class.java).orEmpty()
+                    val status = field("status")
+                    val index = stages.indexOf(status)
+                    nextStage = stages.getOrNull(index + 1).takeIf { index >= 0 }
+                    val items = snapshot.child("items").children.joinToString("\n") {
+                        "${it.child("name").value ?: "Item"} × ${it.child("quantity").value ?: ""}"
+                    }
+                    tvOrder.text = "Order #${orderId.takeLast(6).uppercase()}\n" +
+                        "Status: ${status.replace('_', ' ')}\n\n" +
+                        "Pickup: ${field("restaurantName")}\n${field("pickupAddress")}\n\n" +
+                        "Deliver to: ${field("deliveryAddress")}\n\n$items\n\n" +
+                        "Total: EGP ${snapshot.child("total").value ?: "—"}"
+                }
+                updateDeliveryButton()
+            }
+            override fun onCancelled(error: DatabaseError) {
+                if (currentOrderId != orderId) return
+                nextStage = null
+                tvOrder.text = "Unable to load delivery: ${error.message}"
+                updateDeliveryButton()
+            }
+        }
+        jobRef?.addValueEventListener(jobListener!!)
+    }
+
+    private fun updateDeliveryButton() {
+        btnDeliveryStage.text = if (updatingStage) "Saving…" else when (nextStage) {
+            "WAITING_AT_RESTAURANT" -> "Waiting at Restaurant"
+            "PICKED_UP" -> "Confirm Pickup"
+            "IN_AREA" -> "Arrived in Customer Area"
+            "DELIVERED" -> "Confirm Delivered"
+            else -> "No next stage available"
+        }
+        btnDeliveryStage.isEnabled = nextStage != null && !updatingStage &&
+            state.running && state.online && state.connected && !state.stopping
+    }
+
+    private fun advanceDelivery(orderId: String, target: String) {
+        updatingStage = true
+        updateDeliveryButton()
+        FirebaseFunctions.getInstance().getHttpsCallable("advanceDelivery")
+            .call(mapOf("orderId" to orderId, "status" to target))
+            .addOnCompleteListener(this) { task ->
+                updatingStage = false
+                if (!task.isSuccessful) showMessage(task.exception?.localizedMessage ?: "Could not save stage")
+                updateDeliveryButton()
+            }
     }
 
     private fun requestNotificationAndStart() {
@@ -164,6 +253,7 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnOnline.isEnabled = ready && (!state.running || !isBusy) && (!state.running || state.connected)
         btnLogout.isEnabled = ready && !isBusy && (!state.running || state.connected)
         btnRefresh.isEnabled = state.running && !state.stopping
+        updateDeliveryButton()
     }
 
     private fun finishLogout() {
@@ -182,6 +272,7 @@ class RiderDashboardActivity : AppCompatActivity() {
     }
     override fun onDestroy() {
         assignmentListener?.let { assignmentRef?.removeEventListener(it) }
+        jobListener?.let { jobRef?.removeEventListener(it) }
         // The foreground service survives dashboard destruction.
         super.onDestroy()
     }

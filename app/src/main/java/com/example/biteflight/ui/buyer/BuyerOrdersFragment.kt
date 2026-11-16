@@ -16,6 +16,7 @@ class BuyerOrdersFragment : Fragment() {
 
     private val orderList = mutableListOf<Order>()
     private lateinit var adapter: OrderAdapter
+    private var stopObserving: (() -> Unit)? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,24 +43,31 @@ class BuyerOrdersFragment : Fragment() {
         recycler?.layoutManager = LinearLayoutManager(requireContext())
         recycler?.adapter = adapter
 
-        loadOrders()
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
         loadOrders()
     }
 
     private fun loadOrders() {
         val buyer = FirebaseAuth.getInstance().currentUser ?: return
-        com.example.biteflight.data.repository.OrderRepository.buyerOrders(buyer.uid)
-            .addOnSuccessListener { orders ->
+        stopObserving?.invoke()
+        stopObserving = com.example.biteflight.data.repository.OrderRepository.observeBuyerOrders(buyer.uid,
+            onOrders = { orders ->
                 orderList.clear()
                 orderList.addAll(orders)
                 if (::adapter.isInitialized) adapter.notifyDataSetChanged()
+            },
+            onError = { message ->
+                context?.let { Toast.makeText(it, message, Toast.LENGTH_LONG).show() }
             }
-            .addOnFailureListener { error ->
-                Toast.makeText(requireContext(), error.message, Toast.LENGTH_LONG).show()
-            }
+        )
+    }
+
+    override fun onStop() {
+        stopObserving?.invoke()
+        stopObserving = null
+        super.onStop()
     }
 }

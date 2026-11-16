@@ -2,6 +2,12 @@ package com.example.biteflight
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.example.biteflight.utils.BuyerPushRegistration
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.PopupMenu
@@ -21,6 +27,12 @@ import com.example.biteflight.utils.Resource
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 
 class MainActivity : AppCompatActivity() {
+    private val notificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) Toast.makeText(this,
+            "Enable notifications in Settings for delivery alerts", Toast.LENGTH_LONG).show()
+    }
 
     private lateinit var viewPager: ViewPager2
     private lateinit var pagerAdapter: BuyerPagerAdapter
@@ -79,6 +91,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupBuyerWorkflow() {
+        BuyerPushRegistration.register()
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this,
+                Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         deliveryContainer.visibility = View.GONE
         viewPager.visibility = View.VISIBLE
 
@@ -98,6 +115,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         BuyerNavigation.attach(this, selectedId)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (::pagerAdapter.isInitialized && intent.getIntExtra("targetTab", -1) == 2) {
+            viewPager.currentItem = 2
+            BuyerNavigation.attach(this, R.id.buyerOrders)
+        }
     }
 
     private fun setupSettingsMenu() {

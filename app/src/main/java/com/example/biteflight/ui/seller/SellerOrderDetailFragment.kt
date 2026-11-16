@@ -6,17 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
+import com.example.biteflight.data.model.orderStatusLabel
 import com.google.android.material.button.MaterialButton
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class SellerOrderDetailFragment(private val order: Order) : Fragment() {
+    private var orderRef: DatabaseReference? = null
+    private var orderListener: ValueEventListener? = null
+    private var currentStatus = order.status
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,28 +42,24 @@ class SellerOrderDetailFragment(private val order: Order) : Fragment() {
         val tvStatus = view.findViewById<TextView>(R.id.tvDetailStatus)
         val btnComplete = view.findViewById<MaterialButton>(R.id.btnCompleteOrder)
 
-        tvStatus?.text = "Status: ${order.status}"
-
-        if (order.status.equals("COMPLETED", true)) {
-            btnComplete?.isEnabled = false
-            btnComplete?.text = "Order Completed"
+        fun renderStatus() {
+            tvStatus?.text = "Status: ${orderStatusLabel(currentStatus)}"
+            btnComplete?.visibility = View.GONE
         }
-
-        btnComplete?.setOnClickListener {
-            FirebaseDatabase.getInstance().getReference("orders").child(order.sellerId)
-                .child(order.id)
-                .child("status")
-                .setValue("COMPLETED")
-                .addOnSuccessListener {
-                    Toast.makeText(requireContext(), "Order marked as completed", Toast.LENGTH_SHORT).show()
-                    tvStatus?.text = "Status: COMPLETED"
-                    btnComplete.isEnabled = false
-                    btnComplete.text = "Order Completed"
-                }
-                .addOnFailureListener { error ->
-                    Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_LONG).show()
-                }
+        orderRef = FirebaseDatabase.getInstance().getReference("orders")
+            .child(order.sellerId).child(order.id)
+        orderListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                currentStatus = snapshot.child("status").getValue(String::class.java).orEmpty()
+                renderStatus()
+            }
+            override fun onCancelled(error: DatabaseError) {
+                btnComplete?.isEnabled = false
+                tvStatus?.text = "Unable to load order: ${error.message}"
+            }
         }
+        orderRef?.addValueEventListener(orderListener!!)
+        renderStatus()
 
         val dateStr = if (order.createdAt > 0) {
             SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(order.createdAt))
@@ -73,5 +72,11 @@ class SellerOrderDetailFragment(private val order: Order) : Fragment() {
         val itemsStr = order.items.joinToString("\n") { "${it.name} x${it.quantity} - EGP ${it.price * it.quantity}" }
         view.findViewById<TextView>(R.id.tvDetailItems)?.text = itemsStr.ifBlank { "No items" }
         view.findViewById<TextView>(R.id.tvDetailTotal)?.text = "Total: EGP ${order.total}"
+    }
+
+    override fun onDestroyView() {
+        orderListener?.let { orderRef?.removeEventListener(it) }
+        orderListener = null
+        super.onDestroyView()
     }
 }

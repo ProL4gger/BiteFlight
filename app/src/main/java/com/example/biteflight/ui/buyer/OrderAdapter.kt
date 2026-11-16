@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
+import com.example.biteflight.data.model.orderStatusLabel
 
 class OrderAdapter(
     private val orders: List<Order>,
@@ -17,6 +18,7 @@ class OrderAdapter(
     class OrderViewHolder(
         itemView: View
     ) : RecyclerView.ViewHolder(itemView) {
+        val deliveryProgress: DeliveryProgressView = itemView.findViewById(R.id.deliveryProgress)
 
         val tvRestaurant: TextView =
             itemView.findViewById(
@@ -69,6 +71,8 @@ class OrderAdapter(
         position: Int
     ) {
         val order = orders[position]
+        holder.deliveryProgress.visibility = if (isForSeller) View.GONE else View.VISIBLE
+        if (!isForSeller) holder.deliveryProgress.setStatus(order.status)
         val orderNum = if (order.id.length >= 6) order.id.takeLast(6).uppercase() else order.id.uppercase()
 
         if (isForSeller) {
@@ -89,7 +93,7 @@ class OrderAdapter(
             "Total: EGP ${order.total}"
 
         holder.tvStatus.text =
-            "Status: ${order.status}"
+            "Status: ${orderStatusLabel(order.status)}"
 
         holder.tvAddress.text =
             "Address: ${order.deliveryAddress}"

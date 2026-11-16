@@ -12,12 +12,14 @@ import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
 import com.example.biteflight.ui.buyer.OrderAdapter
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 
 class SellerOrderListFragment : Fragment() {
 
     private val orderList = mutableListOf<Order>()
     private lateinit var adapter: OrderAdapter
+    private var ordersRef: DatabaseReference? = null
+    private var ordersListener: ValueEventListener? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,19 +52,18 @@ class SellerOrderListFragment : Fragment() {
         recycler?.layoutManager = LinearLayoutManager(requireContext())
         recycler?.adapter = adapter
 
-        loadSellerOrders()
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
         loadSellerOrders()
     }
 
     private fun loadSellerOrders() {
         val seller = FirebaseAuth.getInstance().currentUser ?: return
-        FirebaseDatabase.getInstance().getReference("orders").child(seller.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
+        ordersRef = FirebaseDatabase.getInstance().getReference("orders").child(seller.uid)
+        ordersListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
                 orderList.clear()
                 for (orderSnapshot in snapshot.children) {
                     val order = orderSnapshot.getValue(Order::class.java)
@@ -75,8 +76,18 @@ class SellerOrderListFragment : Fragment() {
                     adapter.notifyDataSetChanged()
                 }
             }
-            .addOnFailureListener { error ->
-                Toast.makeText(requireContext(), error.message, Toast.LENGTH_LONG).show()
+            override fun onCancelled(error: DatabaseError) {
+                orderList.clear()
+                adapter.notifyDataSetChanged()
+                context?.let { Toast.makeText(it, error.message, Toast.LENGTH_LONG).show() }
             }
+        }
+        ordersRef?.addValueEventListener(ordersListener!!)
+    }
+
+    override fun onStop() {
+        ordersListener?.let { ordersRef?.removeEventListener(it) }
+        ordersListener = null
+        super.onStop()
     }
 }

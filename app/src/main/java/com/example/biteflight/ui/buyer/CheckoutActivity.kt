@@ -10,9 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.biteflight.MainActivity
 import com.example.biteflight.R
 import com.example.biteflight.data.CartManager
-import com.example.biteflight.data.model.Delivery
-import com.example.biteflight.data.model.DeliveryStatus
-import com.example.biteflight.data.model.LocationPoint
 import com.example.biteflight.data.model.Order
 import com.example.biteflight.data.model.OrderItem
 import com.example.biteflight.data.model.User
@@ -26,7 +23,6 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
-import com.google.firebase.firestore.FirebaseFirestore
 
 class CheckoutActivity : AppCompatActivity() {
 
@@ -249,39 +245,19 @@ class CheckoutActivity : AppCompatActivity() {
                     ))
                         .addOnSuccessListener {
 
-                            // 2. Save the Delivery task in Firestore so Delivery drivers can accept it
-                            val firestore = FirebaseFirestore.getInstance()
-                            val deliveryId = firestore.collection("deliveries").document().id
-                            val deliveryData = Delivery(
-                                deliveryId = deliveryId,
-                                orderId = orderId,
-                                driverId = null,
-                                restaurantLocation = LocationPoint(restaurantLat, restaurantLng, CartManager.restaurantName ?: "Restaurant"),
-                                buyerLocation = LocationPoint(buyerLat, buyerLng, deliveryAddress),
-                                distanceKm = distanceKm,
-                                deliveryFee = deliveryFee,
-                                status = DeliveryStatus.PENDING_ASSIGNMENT,
-                                updatedAt = System.currentTimeMillis()
-                            )
+                            // The server assigns a rider from this canonical order.
+                            CartManager.clearCart()
+                            placingOrder = false
 
-                            firestore.collection("deliveries").document(deliveryId).set(deliveryData)
-                                .addOnSuccessListener {
-                                    CartManager.clearCart()
-                                    placingOrder = false
-
-                                    if (!isFinishing && !isDestroyed) {
-                                        showMessage("Order placed successfully!")
-                                        val intent = Intent(this@CheckoutActivity, MainActivity::class.java).apply {
-                                            putExtra("targetTab", 2)
-                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                                        }
-                                        startActivity(intent)
-                                        finish()
-                                    }
+                            if (!isFinishing && !isDestroyed) {
+                                showMessage("Order placed successfully!")
+                                val intent = Intent(this@CheckoutActivity, MainActivity::class.java).apply {
+                                    putExtra("targetTab", 2)
+                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                 }
-                                .addOnFailureListener { firestoreError ->
-                                    finishWithError("Order placed but delivery assignment failed: ${firestoreError.message}")
-                                }
+                                startActivity(intent)
+                                finish()
+                            }
                         }
                         .addOnFailureListener { saveError ->
                             restoreStock(menuReference, requestedItems) { restored ->

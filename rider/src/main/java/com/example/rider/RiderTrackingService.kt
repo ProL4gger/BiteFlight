@@ -17,6 +17,7 @@ import com.google.android.gms.location.*
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.functions.FirebaseFunctions
 
 /** Owns the online shift; only this service writes rider presence. */
 class RiderTrackingService : Service() {
@@ -289,20 +290,24 @@ class RiderTrackingService : Service() {
             return
         }
         stopChecking = true
-        database.getReference("delivery/riders").child(uid!!).child("currentOrderId").get()
-            .addOnSuccessListener { snapshot ->
+        // Pause new presence writes while the server atomically checks the assignment
+        // and sets offline. Dispatch uses the same transaction boundary.
+        endingShift = true
+        generation++
+        writing = false
+        FirebaseFunctions.getInstance().getHttpsCallable("endRiderShift").call()
+            .addOnSuccessListener {
                 stopChecking = false
                 if (destroyed) return@addOnSuccessListener
-                if (!snapshot.getValue(String::class.java).isNullOrBlank()) {
-                    current = current.copy(error = "Finish your delivery before going offline")
-                    publish()
-                } else stopShift()
+                stopShift()
             }
             .addOnFailureListener {
                 stopChecking = false
                 if (!destroyed) {
+                    endingShift = false
                     current = current.copy(error = "Could not verify delivery status: ${it.localizedMessage}")
                     publish()
+                    requestFreshLocation()
                 }
             }
     }

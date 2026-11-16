@@ -60,6 +60,12 @@
             android:textColor="@color/primary"
             android:textStyle="bold" />
 
+        <com.example.biteflight.ui.buyer.DeliveryProgressView
+            android:id="@+id/deliveryProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp" />
+
         <TextView
             android:id="@+id/tvOrderAddress"
             android:layout_width="wrap_content"

@@ -1,3 +1,4 @@
+
 package com.example.biteflight.data.repository
 
 import android.util.Log
@@ -43,18 +44,38 @@ class AuthRepository(
 
                 val userWithUid = user.copy(uid = firebaseUser.uid)
 
-                database.getReference("users")
-                    .child(firebaseUser.uid)
-                    .setValue(userWithUid)
+                val profilePath = "users/${DatabasePaths.groupForRole(user.role)}/${firebaseUser.uid}"
+                val registration = mutableMapOf<String, Any>(profilePath to userWithUid)
+                if (user.role.equals(User.ROLE_SELLER, true)) {
+                    registration["restaurants/${firebaseUser.uid}"] =
+                        RestaurantProfiles.publicFields(userWithUid)
+                }
+                database.reference.updateChildren(registration)
                     .addOnCompleteListener { dbTask ->
                         if (dbTask.isSuccessful) {
                             onResult(Resource.Success(firebaseUser))
                         } else {
                             Log.e(TAG, "Profile save failed", dbTask.exception)
-                            onResult(Resource.Error(
-                                dbTask.exception?.localizedMessage
+                            // Auth and Realtime Database are separate services. Undo
+                            // this new account if its required profile was rejected.
+                            firebaseUser.delete().addOnCompleteListener { deleteTask ->
+                                auth.signOut()
+                                val reason = dbTask.exception?.localizedMessage
                                     ?: "Could not save profile"
-                            ))
+                                if (deleteTask.isSuccessful) {
+                                    onResult(Resource.Error(
+                                        "Registration was not completed: $reason. " +
+                                            "Please try again after database access is fixed."
+                                    ))
+                                } else {
+                                    Log.e(TAG, "Account rollback failed", deleteTask.exception)
+                                    onResult(Resource.Error(
+                                        "Your sign-in account was created, but its profile " +
+                                            "could not be saved: $reason. Please contact support " +
+                                            "to restore your profile."
+                                    ))
+                                }
+                            }
                         }
                     }
             }
@@ -72,7 +93,17 @@ class AuthRepository(
                 if (task.isSuccessful) {
                     val firebaseUser = auth.currentUser
                     if (firebaseUser != null) {
-                        onResult(Resource.Success(firebaseUser))
+                        // Do not enter the app until the database profile exists.
+                        fetchUserProfile(firebaseUser.uid) { profileResult ->
+                            when (profileResult) {
+                                is Resource.Loading -> Unit
+                                is Resource.Success -> onResult(Resource.Success(firebaseUser))
+                                is Resource.Error -> {
+                                    auth.signOut()
+                                    onResult(Resource.Error(profileResult.message))
+                                }
+                            }
+                        }
                     } else {
                         onResult(Resource.Error("Sign in failed"))
                     }
@@ -91,45 +122,44 @@ class AuthRepository(
     ) {
         onResult(Resource.Loading)
 
-        database.getReference("users").child(uid).get()
-            .addOnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    onResult(Resource.Error(
-                        task.exception?.localizedMessage
-                            ?: "Could not load profile"
-                    ))
-                    return@addOnCompleteListener
-                }
-
-                val user = task.result?.getValue(User::class.java)
-
-                if (user != null) {
-                    onResult(Resource.Success(user))
-                } else {
-                    val email = auth.currentUser?.email.orEmpty()
-                    val fallbackUser = User(
-                        uid = uid,
-                        email = email,
-                        name = email.substringBefore("@"),
-                        role = User.ROLE_BUYER
-                    )
-
-                    database.getReference("users")
-                        .child(uid)
-                        .setValue(fallbackUser)
-                        .addOnCompleteListener { saveTask ->
-                            if (saveTask.isSuccessful) {
-                                onResult(Resource.Success(fallbackUser))
-                            } else {
-                                onResult(Resource.Error(
-                                    "Could not create user profile"
-                                ))
-                            }
-                        }
-                }
+        if (auth.currentUser?.uid != uid) {
+            onResult(Resource.Error("Please sign in to load your profile"))
+            return
+        }
+        // Read only this account's record in each group. Never guess a
+        // missing seller/rider profile's role or silently turn it into a buyer.
+        val groups = listOf("buyers", "sellers", "riders")
+        fun findProfile(index: Int) {
+            if (index == groups.size) {
+                onResult(Resource.Error(
+                    "Your account has no database profile. Restore or migrate its " +
+                        "profile into users/buyers, users/sellers or users/riders."
+                ))
+                return
             }
+            database.getReference("users").child(groups[index]).child(uid).get()
+                .addOnCompleteListener { task ->
+                    if (!task.isSuccessful) {
+                        onResult(Resource.Error(task.exception?.localizedMessage
+                            ?: "Could not load profile"))
+                    } else if (!task.result.exists()) {
+                        findProfile(index + 1)
+                    } else {
+                        try {
+                            val profile = task.result.getValue(User::class.java)
+                                ?: throw IllegalStateException("Invalid profile")
+                            if (DatabasePaths.groupForRole(profile.role) != groups[index]) {
+                                throw IllegalStateException("Profile role does not match its account group")
+                            }
+                            onResult(Resource.Success(profile.copy(uid = uid)))
+                        } catch (error: Exception) {
+                            onResult(Resource.Error(error.localizedMessage ?: "Invalid profile"))
+                        }
+                    }
+                }
+        }
+        findProfile(0)
     }
-
     fun updateUserProfile(
         user: User,
         onResult: (Resource<Unit>) -> Unit
@@ -147,15 +177,20 @@ class AuthRepository(
             updates["deliveryAddressDetails"] =
                 user.deliveryAddressDetails
         }
-
         if (user.role.equals(User.ROLE_SELLER, true)) {
             updates["lat"] = user.lat
             updates["lng"] = user.lng
         }
 
-        database.getReference("users")
-            .child(user.uid)
-            .updateChildren(updates)
+        val profilePath = "users/${DatabasePaths.groupForRole(user.role)}/${user.uid}"
+        val changes = mutableMapOf<String, Any>()
+        updates.forEach { (key, value) -> changes["$profilePath/$key"] = value }
+        if (user.role.equals(User.ROLE_SELLER, true)) {
+            listOf("name", "address", "imageUrl", "lat", "lng").forEach { key ->
+                changes["restaurants/${user.uid}/$key"] = updates.getValue(key)
+            }
+        }
+        database.reference.updateChildren(changes)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     onResult(Resource.Success(Unit))

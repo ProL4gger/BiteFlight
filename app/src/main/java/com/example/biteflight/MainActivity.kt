@@ -15,9 +15,10 @@ import com.example.biteflight.data.model.User
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.ui.buyer.BuyerNavigation
 import com.example.biteflight.ui.buyer.BuyerPagerAdapter
-import com.example.biteflight.ui.delivery.DeliveryHomeFragment
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.example.biteflight.data.repository.AuthRepository
+import com.example.biteflight.utils.Resource
+import com.example.biteflight.ui.seller.SellerDashboardActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -53,33 +54,28 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        FirebaseDatabase.getInstance().getReference("users")
-            .child(currentUser.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val user = snapshot.getValue(User::class.java)
-                val role = user?.role ?: User.ROLE_BUYER
-
-                when (role) {
-                    User.ROLE_DELIVERY -> {
-                        viewPager.visibility = View.GONE
-                        deliveryContainer.visibility = View.VISIBLE
-
-                        supportFragmentManager.beginTransaction()
-                            .replace(R.id.deliveryFragmentContainer, DeliveryHomeFragment())
-                            .commit()
-                    }
+        AuthRepository().fetchUserProfile(currentUser.uid) { result ->
+            when (result) {
+                is Resource.Loading -> Unit
+                is Resource.Success -> when (result.data.role.uppercase()) {
+                    User.ROLE_BUYER -> setupBuyerWorkflow()
                     User.ROLE_SELLER -> {
-                        setupBuyerWorkflow()
+                        startActivity(Intent(this, SellerDashboardActivity::class.java))
+                        finish()
                     }
                     else -> {
-                        setupBuyerWorkflow()
+                        FirebaseAuth.getInstance().signOut()
+                        Toast.makeText(this, "Please use the rider app for this account", Toast.LENGTH_LONG).show()
+                        redirectToLogin()
                     }
                 }
+                is Resource.Error -> {
+                    FirebaseAuth.getInstance().signOut()
+                    Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+                    redirectToLogin()
+                }
             }
-            .addOnFailureListener {
-                setupBuyerWorkflow()
-            }
+        }
     }
 
     private fun setupBuyerWorkflow() {

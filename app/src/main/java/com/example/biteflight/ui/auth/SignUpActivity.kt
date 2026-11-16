@@ -36,9 +36,12 @@ class SignUpActivity : AppCompatActivity() {
 
         // Capture selected role from the RadioGroup
         val selectedRoleId = binding.radioGroupRole.checkedRadioButtonId
+        if (selectedRoleId == R.id.radioDelivery) {
+            Toast.makeText(this, "Please register through the rider app", Toast.LENGTH_LONG).show()
+            return
+        }
         val role = when (selectedRoleId) {
             R.id.radioSeller -> User.ROLE_SELLER
-            R.id.radioDelivery -> User.ROLE_DELIVERY
             else -> User.ROLE_BUYER
         }
 

@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
 
 class BuyerOrdersFragment : Fragment() {
 
@@ -53,22 +52,11 @@ class BuyerOrdersFragment : Fragment() {
 
     private fun loadOrders() {
         val buyer = FirebaseAuth.getInstance().currentUser ?: return
-        FirebaseDatabase.getInstance().getReference("orders")
-            .orderByChild("buyerId")
-            .equalTo(buyer.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
+        com.example.biteflight.data.repository.OrderRepository.buyerOrders(buyer.uid)
+            .addOnSuccessListener { orders ->
                 orderList.clear()
-                for (child in snapshot.children) {
-                    val order = child.getValue(Order::class.java)
-                    if (order != null) {
-                        orderList.add(order)
-                    }
-                }
-                orderList.sortByDescending { it.createdAt }
-                if (::adapter.isInitialized) {
-                    adapter.notifyDataSetChanged()
-                }
+                orderList.addAll(orders)
+                if (::adapter.isInitialized) adapter.notifyDataSetChanged()
             }
             .addOnFailureListener { error ->
                 Toast.makeText(requireContext(), error.message, Toast.LENGTH_LONG).show()

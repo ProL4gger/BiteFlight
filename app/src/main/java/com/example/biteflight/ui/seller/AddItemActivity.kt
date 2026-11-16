@@ -234,7 +234,7 @@ class AddItemActivity : AppCompatActivity() {
         }
 
         val database = FirebaseDatabase.getInstance()
-            .getReference("menuItems")
+            .getReference("menuItems").child(currentUser.uid)
 
         val itemId = database.push().key
 

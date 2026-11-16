@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F8F4FF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BiteFlight Rider"
+            android:textColor="#6535A0"
+            android:textStyle="bold"
+            android:textSize="30sp"
+            android:layout_marginTop="24dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ready to deliver happiness?"
+            android:textColor="#777080"
+            android:textSize="16sp"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your availability"
+            android:textStyle="bold"
+            android:textColor="#302A38"
+            android:textSize="20sp"
+            android:layout_marginTop="36dp"/>
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="OFFLINE"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#CC3333"
+            android:gravity="center"
+            android:padding="24dp"
+            android:layout_marginTop="14dp"
+            android:background="#EADCFB"/>
+
+        <Button
+            android:id="@+id/btnOnline"
+            android:layout_width="match_parent"
+            android:layout_height="58dp"
+            android:text="Go Online"
+            android:textAllCaps="false"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#6535A0"
+            android:layout_marginTop="20dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your GPS location"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#302A38"
+            android:layout_marginTop="36dp"/>
+
+        <TextView
+            android:id="@+id/tvLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Location not available"
+            android:textColor="#777080"
+            android:textSize="16sp"
+            android:layout_marginTop="12dp"/>
+
+        <Button
+            android:id="@+id/btnRefreshLocation"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Refresh Location"
+            android:textAllCaps="false"
+            android:backgroundTint="#9870C9"
+            android:layout_marginTop="14dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Current Delivery"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#302A38"
+            android:layout_marginTop="36dp"/>
+
+        <TextView
+            android:id="@+id/tvOrder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No orders assigned yet"
+            android:textSize="16sp"
+            android:textColor="#777080"
+            android:padding="22dp"
+            android:background="#EADCFB"
+            android:layout_marginTop="14dp"/>
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Logout"
+            android:textAllCaps="false"
+            android:backgroundTint="#777080"
+            android:layout_marginTop="40dp"/>
+
+    </LinearLayout>
+
+</ScrollView>

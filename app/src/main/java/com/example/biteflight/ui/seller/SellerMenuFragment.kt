@@ -73,9 +73,9 @@ class SellerMenuFragment : Fragment() {
     private fun loadMealsFromFirebase() {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val sellerId = currentUser.uid
-        val database = FirebaseDatabase.getInstance().getReference("menuItems")
+        val database = FirebaseDatabase.getInstance().getReference("menuItems").child(sellerId)
 
-        database.orderByChild("sellerId").equalTo(sellerId).get()
+        database.get()
             .addOnSuccessListener { snapshot ->
                 mealList.clear()
                 for (itemSnapshot in snapshot.children) {
@@ -105,7 +105,7 @@ class SellerMenuFragment : Fragment() {
     }
 
     private fun deleteMeal(meal: Meal) {
-        FirebaseDatabase.getInstance().getReference("menuItems")
+        FirebaseDatabase.getInstance().getReference("menuItems").child(meal.sellerId)
             .child(meal.id)
             .removeValue()
             .addOnSuccessListener {

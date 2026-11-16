@@ -45,7 +45,7 @@ class SellerAvailabilityFragment : Fragment() {
 
         val sellerId = uid
         if (sellerId != null) {
-            FirebaseDatabase.getInstance().getReference("users").child(sellerId).get()
+            FirebaseDatabase.getInstance().getReference("users/sellers").child(sellerId).get()
                 .addOnSuccessListener { snapshot ->
                     if (_binding == null) return@addOnSuccessListener
                     val user = snapshot.getValue(User::class.java)
@@ -104,7 +104,8 @@ class SellerAvailabilityFragment : Fragment() {
             return
         }
         enableControls(false)
-        FirebaseDatabase.getInstance().getReference("users").child(sellerId).updateChildren(
+        com.example.biteflight.data.repository.RestaurantProfiles.updateSeller(sellerId,
+            mapOf("busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing),
             mapOf("busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing)
         ).addOnCompleteListener { task ->
             if (_binding == null) return@addOnCompleteListener

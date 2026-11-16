@@ -10,12 +10,13 @@ object RestaurantProfiles {
     fun publicFields(user: User): Map<String, Any> = mapOf(
         "uid" to user.uid, "role" to User.ROLE_SELLER,
         "name" to user.name, "address" to user.address, "imageUrl" to user.imageUrl,
+        "lat" to user.lat, "lng" to user.lng,
         "busy" to user.busy, "openingTime" to user.openingTime,
         "closingTime" to user.closingTime, "restaurantTimeZone" to user.restaurantTimeZone
     )
 
     fun ensurePublished(uid: String): Task<Void> = FirebaseDatabase.getInstance()
-        .getReference("users").child(uid).get().continueWithTask { task ->
+        .getReference("users/sellers").child(uid).get().continueWithTask { task ->
             val user = task.result.getValue(User::class.java)
                 ?: throw IllegalStateException("Profile not found")
             if (user.role != User.ROLE_SELLER) throw IllegalStateException("Seller account required")
@@ -40,7 +41,7 @@ object RestaurantProfiles {
         ensurePublished(uid).continueWithTask { task ->
             if (!task.isSuccessful) throw task.exception ?: IllegalStateException("Could not publish restaurant")
             val updates = mutableMapOf<String, Any>()
-            privateFields.forEach { (key, value) -> updates["users/$uid/$key"] = value }
+            privateFields.forEach { (key, value) -> updates["users/sellers/$uid/$key"] = value }
             publicChanges.forEach { (key, value) -> updates["restaurants/$uid/$key"] = value }
             FirebaseDatabase.getInstance().reference.updateChildren(updates)
         }

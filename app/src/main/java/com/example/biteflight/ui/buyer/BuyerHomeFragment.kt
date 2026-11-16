@@ -35,6 +35,8 @@ class BuyerHomeFragment : Fragment() {
     private val database = FirebaseDatabase.getInstance()
     private var usersListener: ValueEventListener? = null
     private var mealsListener: ValueEventListener? = null
+    private var addressListener: ValueEventListener? = null
+    private var addressUid: String? = null
     private var openOnly = false
     private var favouritesOnly = false
     private var loaded = false
@@ -101,10 +103,7 @@ class BuyerHomeFragment : Fragment() {
                     if (user.role.equals(User.ROLE_SELLER, true)) {
                         allRestaurants.add(user.copy(uid = child.key ?: continue))
                     }
-                    if (child.key == FirebaseAuth.getInstance().currentUser?.uid) {
-                        view?.findViewById<TextView>(R.id.tvBuyerLocation)?.text =
-                            user.address.ifBlank { "Set your delivery address" } + "  ⌄"
-                    }
+
                 }
                 loaded = true; loadError = null
                 filterRestaurants()
@@ -118,7 +117,9 @@ class BuyerHomeFragment : Fragment() {
         mealsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 meals.clear()
-                snapshot.children.mapNotNullTo(meals) { it.getValue(Meal::class.java) }
+                snapshot.children.forEach { restaurant ->
+                    restaurant.children.mapNotNullTo(meals) { it.getValue(Meal::class.java) }
+                }
                 filterRestaurants()
             }
             override fun onCancelled(error: DatabaseError) {
@@ -126,14 +127,33 @@ class BuyerHomeFragment : Fragment() {
                 filterRestaurants()
             }
         }
-        database.getReference("users").addValueEventListener(usersListener!!)
+        database.getReference("restaurants").addValueEventListener(usersListener!!)
         database.getReference("menuItems").addValueEventListener(mealsListener!!)
+        addressUid = FirebaseAuth.getInstance().currentUser?.uid
+        addressListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                view?.findViewById<TextView>(R.id.tvBuyerLocation)?.text =
+                    snapshot.getValue(String::class.java).orEmpty()
+                        .ifBlank { "Set your delivery address" }
+            }
+            override fun onCancelled(error: DatabaseError) = Unit
+        }
+        addressUid?.let { uid ->
+            database.getReference("users/buyers").child(uid).child("address")
+                .addValueEventListener(addressListener!!)
+        }
         handler.post(refresh)
     }
 
     override fun onStop() {
-        usersListener?.let { database.getReference("users").removeEventListener(it) }
+        usersListener?.let { database.getReference("restaurants").removeEventListener(it) }
         mealsListener?.let { database.getReference("menuItems").removeEventListener(it) }
+        addressUid?.let { uid ->
+            addressListener?.let { listener ->
+                database.getReference("users/buyers").child(uid).child("address")
+                    .removeEventListener(listener)
+            }
+        }
         handler.removeCallbacks(refresh)
         super.onStop()
     }

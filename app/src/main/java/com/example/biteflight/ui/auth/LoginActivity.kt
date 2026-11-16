@@ -15,7 +15,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.firebase.database.FirebaseDatabase
+import com.example.biteflight.data.repository.AuthRepository
 
 class LoginActivity : AppCompatActivity() {
 
@@ -147,51 +147,30 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        val userId = currentUser.uid
-
-        FirebaseDatabase
-            .getInstance()
-            .getReference("users")
-            .child(userId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-
-                val role = snapshot
-                    .child("role")
-                    .getValue(String::class.java)
-
-                if (role?.uppercase() == "SELLER") {
-
-                    val intent = Intent(
-                        this,
-                        SellerDashboardActivity::class.java
-                    )
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                    startActivity(intent)
-
-                } else {
-
-                    val intent = Intent(
-                        this,
-                        MainActivity::class.java
-                    )
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                    startActivity(intent)
+        AuthRepository().fetchUserProfile(currentUser.uid) { result ->
+            when (result) {
+                is Resource.Loading -> Unit
+                is Resource.Success -> {
+                    val destination = when (result.data.role.uppercase()) {
+                        "SELLER" -> SellerDashboardActivity::class.java
+                        "BUYER" -> MainActivity::class.java
+                        else -> null
+                    }
+                    if (destination == null) {
+                        auth.signOut()
+                        Toast.makeText(this, "Please use the rider app for this account", Toast.LENGTH_LONG).show()
+                    } else {
+                        startActivity(Intent(this, destination).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        })
+                        finish()
+                    }
                 }
-
-                finish()
+                is Resource.Error -> {
+                    auth.signOut()
+                    Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+                }
             }
-            .addOnFailureListener { error ->
-
-                Toast.makeText(
-                    this,
-                    "Could not read user role: ${error.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+        }
     }
 }

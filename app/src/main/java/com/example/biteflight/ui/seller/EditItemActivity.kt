@@ -143,7 +143,7 @@ class EditItemActivity : AppCompatActivity() {
         // NEW: Load current stock from Firebase.
         // Disable saving until the quantity has been loaded.
         val itemReference = FirebaseDatabase.getInstance()
-            .getReference("menuItems")
+            .getReference("menuItems").child(FirebaseAuth.getInstance().currentUser?.uid ?: return)
             .child(itemId)
 
         btnSaveChanges.isEnabled = false
@@ -344,7 +344,7 @@ class EditItemActivity : AppCompatActivity() {
         // The UI checks ownership, but Firebase rules
         // must enforce it for real security.
         FirebaseDatabase.getInstance()
-            .getReference("menuItems")
+            .getReference("menuItems").child(FirebaseAuth.getInstance().currentUser?.uid ?: return)
             .child(itemId)
             .updateChildren(updates)
             .addOnSuccessListener {

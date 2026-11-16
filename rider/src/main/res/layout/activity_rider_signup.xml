@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#F8F4FF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Join BiteFlight Rider"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#6535A0"
+            android:layout_marginTop="32dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create your delivery rider account"
+            android:textSize="15sp"
+            android:textColor="#777080"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="30dp"/>
+
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Full name"
+            android:inputType="textPersonName"
+            android:singleLine="true"/>
+
+        <EditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Phone number"
+            android:inputType="phone"
+            android:singleLine="true"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Email address"
+            android:inputType="textEmailAddress"
+            android:singleLine="true"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Password (at least 6 characters)"
+            android:inputType="textPassword"
+            android:singleLine="true"
+            android:layout_marginTop="12dp"/>
+
+        <EditText
+            android:id="@+id/etConfirmPassword"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="Confirm password"
+            android:inputType="textPassword"
+            android:singleLine="true"
+            android:layout_marginTop="12dp"/>
+
+        <Button
+            android:id="@+id/btnSignup"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Create Account"
+            android:textAllCaps="false"
+            android:textSize="17sp"
+            android:backgroundTint="#6535A0"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="28dp"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginTop="16dp"/>
+
+        <TextView
+            android:id="@+id/tvLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Already have an account? Login"
+            android:textSize="15sp"
+            android:textColor="#6535A0"
+            android:gravity="center"
+            android:padding="16dp"
+            android:layout_marginTop="18dp"/>
+
+    </LinearLayout>
+</ScrollView>

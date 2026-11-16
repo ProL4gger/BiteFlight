@@ -164,8 +164,8 @@ class CheckoutActivity : AppCompatActivity() {
         distanceKm: Double
     ) {
         val database = FirebaseDatabase.getInstance()
-        val menuReference = database.getReference("menuItems")
-        val ordersReference = database.getReference("orders")
+        val menuReference = database.getReference("menuItems").child(sellerId)
+        val ordersReference = database.getReference("orders").child(sellerId)
         val orderId = ordersReference.push().key
 
         if (orderId == null) {
@@ -243,7 +243,10 @@ class CheckoutActivity : AppCompatActivity() {
                     }
 
                     // 1. Save the order in Realtime Database
-                    ordersReference.child(orderId).setValue(order)
+                    database.reference.updateChildren(mapOf(
+                        "orders/$sellerId/$orderId" to order,
+                        "buyerOrders/$buyerId/$orderId" to sellerId
+                    ))
                         .addOnSuccessListener {
 
                             // 2. Save the Delivery task in Firestore so Delivery drivers can accept it
@@ -339,10 +342,10 @@ class CheckoutActivity : AppCompatActivity() {
             tvDeliveryFee.text = "Could not determine delivery locations"
             return
         }
-        val users = FirebaseDatabase.getInstance().getReference("users")
+        val database = FirebaseDatabase.getInstance()
 
-        users.child(sellerId).get().addOnSuccessListener { sellerSnap ->
-            users.child(buyerUid).get().addOnSuccessListener { buyerSnap ->
+        database.getReference("restaurants").child(sellerId).get().addOnSuccessListener { sellerSnap ->
+            database.getReference("users/buyers").child(buyerUid).get().addOnSuccessListener { buyerSnap ->
                 if (isFinishing || isDestroyed) return@addOnSuccessListener
 
                 val seller = sellerSnap.getValue(User::class.java)
@@ -387,7 +390,7 @@ class CheckoutActivity : AppCompatActivity() {
     private fun loadBuyerAddress() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         FirebaseDatabase.getInstance()
-            .getReference("users")
+            .getReference("users/buyers")
             .child(user.uid)
             .child("address")
             .get()

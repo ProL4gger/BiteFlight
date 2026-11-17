@@ -222,7 +222,7 @@ class CheckoutActivity : AppCompatActivity() {
             createdAt = System.currentTimeMillis()
         )
 
-        var stockFailure = "Not enough quantity in stock"
+        var stockFailure: String? = null
 
         // One transaction reserves ALL products in this cart.
         menuReference.runTransaction(
@@ -232,9 +232,12 @@ class CheckoutActivity : AppCompatActivity() {
                     currentData: MutableData
                 ): Transaction.Result {
 
+                    stockFailure = null
                     val quantities = mutableMapOf<String, Long>()
 
                     // First validate all items, without changing anything.
+                    // Submit unchanged data on validation failure so Firebase can
+                    // retry if this attempt used an empty or stale local snapshot.
                     for (item in requestedItems) {
 
                         val mealData =
@@ -250,19 +253,19 @@ class CheckoutActivity : AppCompatActivity() {
 
                         if (storedSellerId != item.sellerId) {
                             stockFailure = "Item is no longer available"
-                            return Transaction.abort()
+                            return Transaction.success(currentData)
                         }
 
                         if (stock <= 0L) {
                             stockFailure =
                                 "${item.name} is Out of Stock"
-                            return Transaction.abort()
+                            return Transaction.success(currentData)
                         }
 
                         if (stock < item.quantity.toLong()) {
                             stockFailure =
                                 "Not enough quantity in stock for ${item.name}"
-                            return Transaction.abort()
+                            return Transaction.success(currentData)
                         }
 
                         quantities[item.mealId] = stock
@@ -298,8 +301,9 @@ class CheckoutActivity : AppCompatActivity() {
                         return
                     }
 
-                    if (!committed) {
-                        finishWithError(stockFailure)
+                    val failure = stockFailure
+                    if (!committed || failure != null) {
+                        finishWithError(failure ?: "Could not reserve stock")
                         return
                     }
 

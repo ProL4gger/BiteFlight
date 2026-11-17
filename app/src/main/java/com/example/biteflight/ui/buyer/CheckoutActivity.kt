@@ -186,10 +186,10 @@ class CheckoutActivity : AppCompatActivity() {
         val database = FirebaseDatabase.getInstance()
 
         val menuReference =
-            database.getReference("menuItems")
+            database.getReference("menuItems").child(sellerId)
 
         val ordersReference =
-            database.getReference("orders")
+            database.getReference("orders").child(sellerId)
 
         val orderId = ordersReference.push().key
 
@@ -246,9 +246,9 @@ class CheckoutActivity : AppCompatActivity() {
 
                         val stock =
                             (mealData.child("stockQuantity")
-                                .value as? Number)?.toLong() ?: 99L
+                                .value as? Number)?.toLong() ?: 0L
 
-                        if (!storedSellerId.isNullOrBlank() && storedSellerId != item.sellerId) {
+                        if (storedSellerId != item.sellerId) {
                             stockFailure = "Item is no longer available"
                             return Transaction.abort()
                         }
@@ -305,8 +305,10 @@ class CheckoutActivity : AppCompatActivity() {
 
                     // Stock has been reserved successfully.
                     // Now save the order.
-                    ordersReference.child(orderId)
-                        .setValue(order)
+                    database.reference.updateChildren(mapOf(
+                        "orders/$sellerId/$orderId" to order,
+                        "buyerOrders/$buyerId/$orderId" to sellerId
+                    ))
                         .addOnSuccessListener {
 
                             CartManager.clearCart()
@@ -429,7 +431,7 @@ class CheckoutActivity : AppCompatActivity() {
             .currentUser ?: return
 
         FirebaseDatabase.getInstance()
-            .getReference("users")
+            .getReference("users").child("buyers")
             .child(user.uid)
             .child("address")
             .get()

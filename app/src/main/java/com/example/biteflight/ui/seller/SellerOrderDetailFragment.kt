@@ -6,19 +6,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.biteflight.R
 import com.example.biteflight.data.model.Order
 import com.google.android.material.button.MaterialButton
-import com.google.firebase.database.FirebaseDatabase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class SellerOrderDetailFragment(private val order: Order) : Fragment() {
-
-    private var currentStatus = order.status
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,55 +37,10 @@ class SellerOrderDetailFragment(private val order: Order) : Fragment() {
         val tvStatus = view.findViewById<TextView>(R.id.tvDetailStatus)
         val btnComplete = view.findViewById<MaterialButton>(R.id.btnCompleteOrder)
 
-        fun updateButtonState(status: String) {
-            currentStatus = status
-            tvStatus?.text = "Status: $status"
-            when {
-                status.equals("PLACED", true) -> {
-                    btnComplete?.isEnabled = true
-                    btnComplete?.text = "Mark as In Progress"
-                }
-                status.equals("In Progress", true) -> {
-                    btnComplete?.isEnabled = true
-                    btnComplete?.text = "Mark as Out for delivery"
-                }
-                status.equals("Out for delivery", true) -> {
-                    btnComplete?.isEnabled = true
-                    btnComplete?.text = "Mark as Completed"
-                }
-                status.equals("COMPLETED", true) -> {
-                    btnComplete?.isEnabled = false
-                    btnComplete?.text = "Order Completed"
-                }
-                else -> {
-                    btnComplete?.isEnabled = true
-                    btnComplete?.text = "Mark as In Progress"
-                }
-            }
-        }
-
-        updateButtonState(currentStatus)
-
-        btnComplete?.setOnClickListener {
-            val nextStatus = when {
-                currentStatus.equals("PLACED", true) -> "In Progress"
-                currentStatus.equals("In Progress", true) -> "Out for delivery"
-                currentStatus.equals("Out for delivery", true) -> "COMPLETED"
-                else -> "COMPLETED"
-            }
-
-            FirebaseDatabase.getInstance().getReference("orders")
-                .child(order.id)
-                .child("status")
-                .setValue(nextStatus)
-                .addOnSuccessListener {
-                    Toast.makeText(requireContext(), "Order status updated to: $nextStatus", Toast.LENGTH_SHORT).show()
-                    updateButtonState(nextStatus)
-                }
-                .addOnFailureListener { error ->
-                    Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_LONG).show()
-                }
-        }
+        tvStatus?.text = "Status: ${order.status}"
+        btnComplete?.isEnabled = false
+        btnComplete?.text = if (order.status == "DELIVERED" || order.status == "COMPLETED")
+            "Order delivered" else "Awaiting rider update"
 
         val dateStr = if (order.createdAt > 0) {
             SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(order.createdAt))

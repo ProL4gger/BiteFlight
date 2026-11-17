@@ -189,7 +189,7 @@ class RestaurantMenuActivity : AppCompatActivity() {
         statusListener = listener
 
         FirebaseDatabase.getInstance()
-            .getReference("users")
+            .getReference("restaurants")
             .child(sellerId)
             .addValueEventListener(listener)
 
@@ -205,7 +205,7 @@ class RestaurantMenuActivity : AppCompatActivity() {
             statusListener?.let { listener ->
 
                 FirebaseDatabase.getInstance()
-                    .getReference("users")
+                    .getReference("restaurants")
                     .child(sellerId)
                     .removeEventListener(listener)
             }
@@ -283,7 +283,7 @@ class RestaurantMenuActivity : AppCompatActivity() {
 
         FirebaseDatabase.getInstance()
             .getReference("menuItems")
-            .child(meal.id)
+            .child(meal.sellerId).child(meal.id)
             .get()
             .addOnSuccessListener { snapshot ->
 
@@ -485,8 +485,7 @@ class RestaurantMenuActivity : AppCompatActivity() {
 
         val query = FirebaseDatabase.getInstance()
             .getReference("menuItems")
-            .orderByChild("sellerId")
-            .equalTo(sellerId)
+            .child(sellerId)
 
         menuQuery = query
 

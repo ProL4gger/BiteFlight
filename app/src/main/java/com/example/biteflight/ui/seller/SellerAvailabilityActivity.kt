@@ -37,7 +37,7 @@ class SellerAvailabilityActivity : AppCompatActivity() {
         binding.btnSaveAvailability.setOnClickListener { save() }
         val sellerId = uid
         if (sellerId == null) { finish(); return }
-        FirebaseDatabase.getInstance().getReference("users").child(sellerId).get()
+        FirebaseDatabase.getInstance().getReference("users").child("sellers").child(sellerId).get()
             .addOnSuccessListener { snapshot ->
                 if (isFinishing || isDestroyed) return@addOnSuccessListener
                 val user = snapshot.getValue(User::class.java)
@@ -94,7 +94,9 @@ class SellerAvailabilityActivity : AppCompatActivity() {
             return
         }
         enableControls(false)
-        FirebaseDatabase.getInstance().getReference("users").child(sellerId).updateChildren(
+        com.example.biteflight.data.repository.RestaurantProfiles.updateSeller(
+            sellerId,
+            mapOf("busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing),
             mapOf("busy" to binding.switchBusy.isChecked, "openingTime" to opening, "closingTime" to closing)
         ).addOnCompleteListener { task ->
             if (isFinishing || isDestroyed) return@addOnCompleteListener

@@ -1,0 +1,33 @@
+# Codex Project Safety Instructions
+
+## API Keys and Sensitive Configuration
+
+The following files are strictly off-limits:
+
+- `local.properties`
+- `.env`
+- `.env.*`
+- `secrets.properties`
+- `keystore.properties`
+- `google-services.json`
+- Any file containing API keys, access tokens, passwords, or private credentials.
+
+## Mandatory Rules
+
+1. Never open, read, inspect, search, analyze, or print the contents of the restricted files.
+2. Never attempt to retrieve API keys or credentials from these files.
+3. Do not include API keys, tokens, or credentials in source code, logs, comments, or documentation.
+4. Do not modify, overwrite, rename, move, or delete restricted files.
+5. Do not run commands that might print the contents of restricted files.
+6. When searching the project, explicitly exclude the restricted files and their contents.
+7. If a task requires access to a restricted configuration value, ask me to provide a safe placeholder instead.
+8. You may reference configuration variable names and file paths without inspecting their contents.
+
+## Kotlin / Android Project Guidelines
+
+- Use placeholders for API keys during development.
+- Keep sensitive configuration outside version control.
+- Do not hardcode credentials in Kotlin source files.
+- Preserve existing API integration logic unless explicitly instructed otherwise.
+
+**These rules take priority over convenience. Never access restricted files even if doing so would simplify a task.**

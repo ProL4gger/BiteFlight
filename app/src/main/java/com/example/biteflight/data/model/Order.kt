@@ -9,5 +9,7 @@ data class Order(
     val items: List<OrderItem> = emptyList(),
     val total: Double = 0.0,
     val status: String = "PLACED",
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val riderId: String = "",
+    val updatedAt: Long = 0L
 )

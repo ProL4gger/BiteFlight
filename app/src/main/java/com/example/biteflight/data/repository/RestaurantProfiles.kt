@@ -15,10 +15,10 @@ object RestaurantProfiles {
     )
 
     fun ensurePublished(uid: String): Task<Void> = FirebaseDatabase.getInstance()
-        .getReference("users").child(uid).get().continueWithTask { task ->
+        .getReference("users").child("sellers").child(uid).get().continueWithTask { task ->
             val user = task.result.getValue(User::class.java)
                 ?: throw IllegalStateException("Profile not found")
-            if (user.role != User.ROLE_SELLER) throw IllegalStateException("Seller account required")
+            if (!user.role.equals(User.ROLE_SELLER, true)) throw IllegalStateException("Seller account required")
             val completion = TaskCompletionSource<Void>()
             FirebaseDatabase.getInstance().getReference("restaurants").child(uid)
                 .runTransaction(object : Transaction.Handler {
@@ -40,7 +40,7 @@ object RestaurantProfiles {
         ensurePublished(uid).continueWithTask { task ->
             if (!task.isSuccessful) throw task.exception ?: IllegalStateException("Could not publish restaurant")
             val updates = mutableMapOf<String, Any>()
-            privateFields.forEach { (key, value) -> updates["users/$uid/$key"] = value }
+            privateFields.forEach { (key, value) -> updates["users/sellers/$uid/$key"] = value }
             publicChanges.forEach { (key, value) -> updates["restaurants/$uid/$key"] = value }
             FirebaseDatabase.getInstance().reference.updateChildren(updates)
         }

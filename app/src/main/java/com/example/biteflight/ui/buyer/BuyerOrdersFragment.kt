@@ -53,25 +53,28 @@ class BuyerOrdersFragment : Fragment() {
 
     private fun loadOrders() {
         val buyer = FirebaseAuth.getInstance().currentUser ?: return
-        FirebaseDatabase.getInstance().getReference("orders")
-            .orderByChild("buyerId")
-            .equalTo(buyer.uid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                orderList.clear()
-                for (child in snapshot.children) {
-                    val order = child.getValue(Order::class.java)
-                    if (order != null) {
-                        orderList.add(order)
+        val database = FirebaseDatabase.getInstance()
+        database.getReference("buyerOrders").child(buyer.uid).get()
+            .addOnSuccessListener { index ->
+                val reads = index.children.mapNotNull { entry ->
+                    val sellerId = entry.getValue(String::class.java) ?: return@mapNotNull null
+                    val orderId = entry.key ?: return@mapNotNull null
+                    database.getReference("orders").child(sellerId).child(orderId).get()
+                }
+                com.google.android.gms.tasks.Tasks.whenAllSuccess<com.google.firebase.database.DataSnapshot>(reads)
+                    .addOnSuccessListener ordersLoaded@{ snapshots ->
+                        if (view == null) return@ordersLoaded
+                        orderList.clear()
+                        snapshots.mapNotNullTo(orderList) { it.getValue(Order::class.java) }
+                        orderList.sortByDescending { it.createdAt }
+                        if (::adapter.isInitialized) adapter.notifyDataSetChanged()
                     }
-                }
-                orderList.sortByDescending { it.createdAt }
-                if (::adapter.isInitialized) {
-                    adapter.notifyDataSetChanged()
-                }
+                    .addOnFailureListener { error ->
+                        context?.let { Toast.makeText(it, error.message, Toast.LENGTH_LONG).show() }
+                    }
             }
             .addOnFailureListener { error ->
-                Toast.makeText(requireContext(), error.message, Toast.LENGTH_LONG).show()
+                context?.let { Toast.makeText(it, error.message, Toast.LENGTH_LONG).show() }
             }
     }
 }

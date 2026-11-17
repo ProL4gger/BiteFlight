@@ -101,10 +101,7 @@ class BuyerHomeFragment : Fragment() {
                     if (user.role.equals(User.ROLE_SELLER, true)) {
                         allRestaurants.add(user.copy(uid = child.key ?: continue))
                     }
-                    if (child.key == FirebaseAuth.getInstance().currentUser?.uid) {
-                        view?.findViewById<TextView>(R.id.tvBuyerLocation)?.text =
-                            user.address.ifBlank { "Set your delivery address" } + "  ⌄"
-                    }
+
                 }
                 loaded = true; loadError = null
                 filterRestaurants()
@@ -118,7 +115,9 @@ class BuyerHomeFragment : Fragment() {
         mealsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 meals.clear()
-                snapshot.children.mapNotNullTo(meals) { it.getValue(Meal::class.java) }
+                snapshot.children.forEach { seller ->
+                    seller.children.mapNotNullTo(meals) { it.getValue(Meal::class.java) }
+                }
                 filterRestaurants()
             }
             override fun onCancelled(error: DatabaseError) {
@@ -126,13 +125,20 @@ class BuyerHomeFragment : Fragment() {
                 filterRestaurants()
             }
         }
-        database.getReference("users").addValueEventListener(usersListener!!)
+        database.getReference("restaurants").addValueEventListener(usersListener!!)
         database.getReference("menuItems").addValueEventListener(mealsListener!!)
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            database.getReference("users").child("buyers").child(uid).child("address").get()
+                .addOnSuccessListener { address ->
+                    view?.findViewById<TextView>(R.id.tvBuyerLocation)?.text =
+                        address.getValue(String::class.java).orEmpty().ifBlank { "Set your delivery address" }
+                }
+        }
         handler.post(refresh)
     }
 
     override fun onStop() {
-        usersListener?.let { database.getReference("users").removeEventListener(it) }
+        usersListener?.let { database.getReference("restaurants").removeEventListener(it) }
         mealsListener?.let { database.getReference("menuItems").removeEventListener(it) }
         handler.removeCallbacks(refresh)
         super.onStop()

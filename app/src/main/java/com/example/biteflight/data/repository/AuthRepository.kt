@@ -45,11 +45,16 @@ class AuthRepository(
                 val userWithUid = user.copy(uid = firebaseUser.uid)
 
                 database.getReference("users")
+                    .child(if (user.role.equals(User.ROLE_SELLER, true)) "sellers" else "buyers")
                     .child(firebaseUser.uid)
                     .setValue(userWithUid)
                     .addOnCompleteListener { dbTask ->
                         if (dbTask.isSuccessful) {
-                            onResult(Resource.Success(firebaseUser))
+                            if (user.role.equals(User.ROLE_SELLER, true)) {
+                                RestaurantProfiles.ensurePublished(firebaseUser.uid)
+                                    .addOnSuccessListener { onResult(Resource.Success(firebaseUser)) }
+                                    .addOnFailureListener { onResult(Resource.Error("Could not publish restaurant. Sign in to retry.")) }
+                            } else onResult(Resource.Success(firebaseUser))
                         } else {
                             Log.e(TAG, "Profile save failed", dbTask.exception)
                             onResult(Resource.Error(
@@ -92,43 +97,27 @@ class AuthRepository(
     ) {
         onResult(Resource.Loading)
 
-        database.getReference("users").child(uid).get()
-            .addOnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    onResult(Resource.Error(
-                        task.exception?.localizedMessage
-                            ?: "Could not load profile"
-                    ))
-                    return@addOnCompleteListener
-                }
+        findProfile(uid) { user, error ->
+            if (user != null) onResult(Resource.Success(user))
+            else onResult(Resource.Error(error ?: "Profile not found. Please contact support."))
+        }
+    }
 
-                val user = task.result?.getValue(User::class.java)
-
-                if (user != null) {
-                    onResult(Resource.Success(user))
-                } else {
-                    val email = auth.currentUser?.email.orEmpty()
-                    val fallbackUser = User(
-                        uid = uid,
-                        email = email,
-                        name = email.substringBefore("@"),
-                        role = User.ROLE_BUYER
-                    )
-
-                    database.getReference("users")
-                        .child(uid)
-                        .setValue(fallbackUser)
-                        .addOnCompleteListener { saveTask ->
-                            if (saveTask.isSuccessful) {
-                                onResult(Resource.Success(fallbackUser))
-                            } else {
-                                onResult(Resource.Error(
-                                    "Could not create user profile"
-                                ))
-                            }
-                        }
-                }
+    private fun findProfile(uid: String, result: (User?, String?) -> Unit) {
+        val buckets = listOf("buyers", "sellers", "riders")
+        fun read(index: Int) {
+            if (index == buckets.size) {
+                result(null, null)
+                return
             }
+            database.getReference("users").child(buckets[index]).child(uid).get()
+                .addOnSuccessListener { snapshot ->
+                    val user = snapshot.getValue(User::class.java)
+                    if (user != null) result(user.copy(uid = uid), null) else read(index + 1)
+                }
+                .addOnFailureListener { result(null, it.localizedMessage) }
+        }
+        read(0)
     }
 
     fun updateUserProfile(
@@ -149,9 +138,14 @@ class AuthRepository(
                 user.deliveryAddressDetails
         }
 
-        database.getReference("users")
-            .child(user.uid)
-            .updateChildren(updates)
+        val saveTask = if (user.role.equals(User.ROLE_SELLER, true)) {
+            RestaurantProfiles.updateSeller(user.uid, updates, mapOf(
+                "name" to user.name, "address" to user.address, "imageUrl" to user.imageUrl
+            ))
+        } else {
+            database.getReference("users").child("buyers").child(user.uid).updateChildren(updates)
+        }
+        saveTask
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
                     onResult(Resource.Success(Unit))

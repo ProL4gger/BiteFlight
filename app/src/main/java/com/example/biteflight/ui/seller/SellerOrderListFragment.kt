@@ -61,8 +61,7 @@ class SellerOrderListFragment : Fragment() {
     private fun loadSellerOrders() {
         val seller = FirebaseAuth.getInstance().currentUser ?: return
         FirebaseDatabase.getInstance().getReference("orders")
-            .orderByChild("sellerId")
-            .equalTo(seller.uid)
+            .child(seller.uid)
             .get()
             .addOnSuccessListener { snapshot ->
                 orderList.clear()

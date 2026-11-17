@@ -149,49 +149,34 @@ class LoginActivity : AppCompatActivity() {
 
         val userId = currentUser.uid
 
-        FirebaseDatabase
-            .getInstance()
-            .getReference("users")
-            .child(userId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-
-                val role = snapshot
-                    .child("role")
-                    .getValue(String::class.java)
-
-                if (role?.uppercase() == "SELLER") {
-
-                    val intent = Intent(
-                        this,
-                        SellerDashboardActivity::class.java
-                    )
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                    startActivity(intent)
-
-                } else {
-
-                    val intent = Intent(
-                        this,
-                        MainActivity::class.java
-                    )
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                    startActivity(intent)
+        com.example.biteflight.data.repository.AuthRepository().fetchUserProfile(userId) { result ->
+            when (result) {
+                is com.example.biteflight.utils.Resource.Success -> {
+                    val user = result.data
+                    if (user.role.equals("SELLER", true)) {
+                        com.example.biteflight.data.repository.RestaurantProfiles.ensurePublished(userId)
+                            .addOnSuccessListener { openDashboard(true) }
+                            .addOnFailureListener {
+                                Toast.makeText(this, "Could not publish restaurant. Please retry.", Toast.LENGTH_LONG).show()
+                            }
+                    } else if (user.role.equals("BUYER", true)) {
+                        openDashboard(false)
+                    } else {
+                        Toast.makeText(this, "Please use the rider app for this account.", Toast.LENGTH_LONG).show()
+                        auth.signOut()
+                    }
                 }
-
-                finish()
+                is com.example.biteflight.utils.Resource.Error ->
+                    Toast.makeText(this, result.message, Toast.LENGTH_LONG).show()
+                else -> Unit
             }
-            .addOnFailureListener { error ->
+        }
+    }
 
-                Toast.makeText(
-                    this,
-                    "Could not read user role: ${error.message}",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+    private fun openDashboard(seller: Boolean) {
+        startActivity(Intent(this, if (seller) SellerDashboardActivity::class.java else MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
+        finish()
     }
 }

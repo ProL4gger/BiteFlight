@@ -2,18 +2,24 @@ package com.example.biteflight.voice
 
 import android.content.Context
 import android.media.AudioManager
+import android.os.SystemClock
 import java.net.InetSocketAddress
+import java.util.concurrent.CopyOnWriteArraySet
 
 object VoipManager {
     private var sipCall: SipCall? = null
+    @Volatile
     var currentState = CallState.READY
         private set
     var currentMessage = "Ready for calls"
         private set
     var activePeerAddress: String = ""
     var activePeerPort: Int = 5060
+    @Volatile
+    internal var connectedAt: Long? = null
+        private set
 
-    val listeners = mutableSetOf<(CallState, String) -> Unit>()
+    val listeners = CopyOnWriteArraySet<(CallState, String) -> Unit>()
 
     fun init(context: Context) {
         if (sipCall != null) return
@@ -21,8 +27,13 @@ object VoipManager {
         currentMessage = "Ready for calls"
         val audio = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         sipCall = SipCall(5060, audio) { state, message ->
-            currentState = state
+            connectedAt = if (state == CallState.ACTIVE) {
+                connectedAt ?: SystemClock.elapsedRealtime()
+            } else {
+                null
+            }
             currentMessage = message
+            currentState = state
             listeners.forEach { it(state, message) }
 
             if (state == CallState.INCOMING || state == CallState.ACTIVE || state == CallState.DIALING || state == CallState.CONNECTING) {

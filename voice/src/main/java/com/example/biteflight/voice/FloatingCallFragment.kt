@@ -2,178 +2,186 @@ package com.example.biteflight.voice
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.widget.Chronometer
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.fragment.app.Fragment
-import java.util.Locale
+import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 class FloatingCallFragment : Fragment() {
-    private lateinit var tvStatus: TextView
-    private lateinit var tvTimer: TextView
-    private lateinit var btnEndCall: ImageButton
-
-    private var dX = 0f
-    private var dY = 0f
-    private var startTime = 0L
-    private val handler = Handler(Looper.getMainLooper())
-    private val timerRunnable = object : Runnable {
-        override fun run() {
-            if (startTime > 0 && VoipManager.currentState == CallState.ACTIVE) {
-                val elapsed = (System.currentTimeMillis() - startTime) / 1000
-                val mins = elapsed / 60
-                val secs = elapsed % 60
-                if (::tvTimer.isInitialized) {
-                    tvTimer.text = String.format(Locale.US, "%02d:%02d", mins, secs)
-                    tvTimer.visibility = View.VISIBLE
-                }
-            } else {
-                if (::tvTimer.isInitialized) {
-                    tvTimer.visibility = View.GONE
-                }
-            }
-            handler.postDelayed(this, 1000)
+    private val stateListener: (CallState, String) -> Unit = { _, _ ->
+        activity?.runOnUiThread {
+            if (isStarted) view?.let(::render)
         }
     }
+    private var isStarted = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_floating_call, container, false)
-    }
+    ): View = inflater.inflate(R.layout.fragment_floating_call, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        tvStatus = view.findViewById(R.id.tvIslandStatus)
-        tvTimer = view.findViewById(R.id.tvIslandTimer)
-        btnEndCall = view.findViewById(R.id.btnIslandEnd)
-
-        btnEndCall.setOnClickListener {
+        view.findViewById<ImageButton>(R.id.btnIslandEnd).setOnClickListener {
             VoipManager.hangUp()
         }
 
+        ViewCompat.replaceAccessibilityAction(
+            view, AccessibilityActionCompat.ACTION_CLICK, getString(R.string.voice_floating_open)
+        ) { target, _ -> target.performClick() }
         view.setOnClickListener {
-            val intent = Intent(requireContext(), VoiceCallActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            startActivity(intent)
+            startActivity(Intent(requireContext(), VoiceCallActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            })
         }
 
-        view.setOnTouchListener { v, event ->
-            when (event.action) {
+        val touchSlop = ViewConfiguration.get(view.context).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var startX = 0f
+        var startY = 0f
+        var dragging = false
+
+        view.setOnTouchListener { target, event ->
+            val cardContainer = target.parent as? View ?: return@setOnTouchListener false
+            val content = cardContainer.parent as? View ?: return@setOnTouchListener false
+            when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    dX = v.x - event.rawX
-                    dY = v.y - event.rawY
+                    downX = event.rawX
+                    downY = event.rawY
+                    startX = cardContainer.x
+                    startY = cardContainer.y
+                    dragging = false
+                    target.isPressed = true
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    v.animate()
-                        .x(event.rawX + dX)
-                        .y(event.rawY + dY)
-                        .setDuration(0)
-                        .start()
+                    val deltaX = event.rawX - downX
+                    val deltaY = event.rawY - downY
+                    if (hypot(deltaX, deltaY) > touchSlop) dragging = true
+                    if (dragging) {
+                        target.isPressed = false
+                        val insets = ViewCompat.getRootWindowInsets(content)?.getInsets(
+                            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                        )
+                        val minX = (insets?.left ?: 0).toFloat()
+                        val minY = (insets?.top ?: 0).toFloat()
+                        val maxX = (content.width - cardContainer.width - (insets?.right ?: 0)).toFloat()
+                        val maxY = (content.height - cardContainer.height - (insets?.bottom ?: 0)).toFloat()
+                        cardContainer.x = (startX + deltaX).coerceIn(minX, maxX.coerceAtLeast(minX))
+                        cardContainer.y = (startY + deltaY).coerceIn(minY, maxY.coerceAtLeast(minY))
+                    }
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    v.performClick()
+                    target.isPressed = false
+                    if (!dragging) target.performClick()
                     true
                 }
-                else -> false
+                MotionEvent.ACTION_CANCEL -> {
+                    target.isPressed = false
+                    true
+                }
+                else -> true
             }
         }
-
-        startTime = System.currentTimeMillis()
-        handler.post(timerRunnable)
-        updateState(VoipManager.currentState, VoipManager.currentMessage)
     }
 
-    override fun onDestroyView() {
-        handler.removeCallbacks(timerRunnable)
-        super.onDestroyView()
+    override fun onStart() {
+        super.onStart()
+        isStarted = true
+        VoipManager.listeners.add(stateListener)
+        view?.let(::render)
     }
 
-    fun updateState(state: CallState, message: String) {
-        if (::tvStatus.isInitialized) {
-            tvStatus.text = message
-            if (state == CallState.ACTIVE && startTime == 0L) {
-                startTime = System.currentTimeMillis()
-            } else if (state == CallState.READY || state == CallState.UNAVAILABLE) {
-                startTime = 0L
+    override fun onStop() {
+        isStarted = false
+        VoipManager.listeners.remove(stateListener)
+        view?.findViewById<Chronometer>(R.id.tvIslandTimer)?.stop()
+        super.onStop()
+    }
+
+    private fun render(view: View) {
+        val state = VoipManager.currentState
+        val label = when (state) {
+            CallState.INCOMING -> R.string.voice_floating_incoming
+            CallState.DIALING -> R.string.voice_floating_dialing
+            CallState.CONNECTING -> R.string.voice_floating_connecting
+            CallState.ACTIVE -> R.string.voice_floating_active
+            CallState.ENDING -> R.string.voice_floating_ending
+            CallState.READY, CallState.UNAVAILABLE -> null
+        }
+        view.visibility = if (label == null) View.GONE else View.VISIBLE
+        val timer = view.findViewById<Chronometer>(R.id.tvIslandTimer)
+        val connectedAt = VoipManager.connectedAt
+        if (state == CallState.ACTIVE && connectedAt != null) {
+            timer.base = connectedAt
+            timer.visibility = View.VISIBLE
+            timer.start()
+        } else {
+            timer.stop()
+            timer.visibility = View.GONE
+        }
+        if (label == null) {
+            (view.parent as? View)?.apply {
+                translationX = 0f
+                translationY = 0f
             }
+            return
+        }
+        view.findViewById<TextView>(R.id.tvIslandStatus).setText(label)
+        view.findViewById<ImageButton>(R.id.btnIslandEnd).apply {
+            isEnabled = state != CallState.ENDING
+            contentDescription = context.getString(when (state) {
+                CallState.INCOMING -> R.string.voice_decline
+                CallState.DIALING -> R.string.voice_cancel
+                else -> R.string.voice_end
+            })
         }
     }
 
     companion object {
         fun attach(activity: AppCompatActivity) {
-            val content = activity.findViewById<ViewGroup>(android.R.id.content)
-            val rootView = content.getChildAt(0) as? ViewGroup ?: content
+            if (activity is VoiceCallActivity || activity.supportFragmentManager.isStateSaved) return
+            val content = activity.findViewById<FrameLayout>(android.R.id.content)
+            val containerId = R.id.floating_call_container
+            if (content.findViewById<View>(containerId) != null) return
 
-            val containerId = 777777
-            var container = rootView.findViewById<FrameLayout>(containerId)
             val density = activity.resources.displayMetrics.density
-            val height = (56 * density).toInt()
-            val marginB = (90 * density).toInt()
-
-            if (container == null) {
-                container = FrameLayout(activity).apply { id = containerId }
-                rootView.addView(container, FrameLayout.LayoutParams(-2, height, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply {
-                    setMargins(0, 0, 0, marginB)
-                })
+            val widthDp = (activity.resources.configuration.screenWidthDp - 32).coerceIn(1, 304)
+            val container = activity.layoutInflater.inflate(R.layout.view_floating_call_container, content, false)
+                as FrameLayout
+            container.apply {
+                clipChildren = false
+                elevation = 8 * density
             }
-            container.bringToFront()
+            content.addView(container, FrameLayout.LayoutParams(
+                (widthDp * density).roundToInt(),
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            ).apply {
+                bottomMargin = (90 * density).roundToInt()
+            })
 
-            val shouldShow = VoipManager.currentState != CallState.READY && VoipManager.currentState != CallState.UNAVAILABLE
-            val existingFrag = activity.supportFragmentManager.findFragmentByTag("voip_island_fragment") as? FloatingCallFragment
-
-            if (shouldShow) {
-                if (existingFrag == null) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .replace(containerId, FloatingCallFragment(), "voip_island_fragment")
-                        .commitAllowingStateLoss()
-                }
-            } else {
-                if (existingFrag != null) {
-                    activity.supportFragmentManager.beginTransaction()
-                        .remove(existingFrag)
-                        .commitAllowingStateLoss()
-                }
+            val fragments = activity.supportFragmentManager
+            if (fragments.findFragmentById(containerId) == null) {
+                fragments.beginTransaction()
+                    .add(containerId, FloatingCallFragment())
+                    .commitNow()
             }
-
-            // Register state listener for this activity
-            val listener: (CallState, String) -> Unit = { state, message ->
-                activity.runOnUiThread {
-                    val f = activity.supportFragmentManager.findFragmentByTag("voip_island_fragment") as? FloatingCallFragment
-                    if (state == CallState.READY || state == CallState.UNAVAILABLE) {
-                        if (f != null) {
-                            activity.supportFragmentManager.beginTransaction().remove(f).commitAllowingStateLoss()
-                        }
-                    } else {
-                        if (f == null) {
-                            val frag = FloatingCallFragment()
-                            activity.supportFragmentManager.beginTransaction()
-                                .replace(containerId, frag, "voip_island_fragment")
-                                .commitAllowingStateLoss()
-                        } else {
-                            f.updateState(state, message)
-                        }
-                    }
-                }
-            }
-
-            // Avoid duplicate listeners
-            VoipManager.listeners.remove(listener)
-            VoipManager.listeners.add(listener)
         }
     }
 }

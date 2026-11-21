@@ -14,6 +14,7 @@ int color text_primary 0x0
 int color text_secondary 0x0
 int color white 0x0
 int drawable bg_circle 0x0
+int drawable bg_floating_call_icon 0x0
 int drawable bg_floating_island 0x0
 int drawable ic_back 0x0
 int drawable ic_end_call 0x0
@@ -25,6 +26,7 @@ int id btnEndCall 0x0
 int id btnIslandEnd 0x0
 int id etRemoteAddress 0x0
 int id etRemotePort 0x0
+int id floating_call_container 0x0
 int id topToolbar 0x0
 int id tvCallStatus 0x0
 int id tvIslandStatus 0x0
@@ -37,12 +39,19 @@ int id voice_remote_port 0x0
 int layout activity_voice_call 0x0
 int layout activity_voice_call_host 0x0
 int layout fragment_floating_call 0x0
+int layout view_floating_call_container 0x0
 int string voice_answer 0x0
 int string voice_back 0x0
 int string voice_call 0x0
 int string voice_cancel 0x0
 int string voice_decline 0x0
 int string voice_end 0x0
+int string voice_floating_active 0x0
+int string voice_floating_connecting 0x0
+int string voice_floating_dialing 0x0
+int string voice_floating_ending 0x0
+int string voice_floating_incoming 0x0
+int string voice_floating_open 0x0
 int string voice_instructions 0x0
 int string voice_invalid_address 0x0
 int string voice_invalid_port 0x0

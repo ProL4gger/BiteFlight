@@ -15,6 +15,7 @@ color text_primary
 color text_secondary
 color white
 drawable bg_circle
+drawable bg_floating_call_icon
 drawable bg_floating_island
 drawable ic_back
 drawable ic_end_call
@@ -26,6 +27,7 @@ id btnEndCall
 id btnIslandEnd
 id etRemoteAddress
 id etRemotePort
+id floating_call_container
 id topToolbar
 id tvCallStatus
 id tvIslandStatus
@@ -38,12 +40,19 @@ id voice_remote_port
 layout activity_voice_call
 layout activity_voice_call_host
 layout fragment_floating_call
+layout view_floating_call_container
 string voice_answer
 string voice_back
 string voice_call
 string voice_cancel
 string voice_decline
 string voice_end
+string voice_floating_active
+string voice_floating_connecting
+string voice_floating_dialing
+string voice_floating_ending
+string voice_floating_incoming
+string voice_floating_open
 string voice_instructions
 string voice_invalid_address
 string voice_invalid_port

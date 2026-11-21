@@ -1,45 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
-    android:layout_height="48dp"
-    android:layout_gravity="center_horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="64dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingHorizontal="14dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="8dp"
     android:paddingVertical="8dp"
     android:background="@drawable/bg_floating_island"
-    android:elevation="16dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:elevation="8dp"
     android:clickable="true"
     android:focusable="true">
 
-    <TextView
-        android:id="@+id/tvIslandStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Call"
-        android:textColor="@android:color/white"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_floating_call_icon"
+        android:padding="9dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_voice_call" />
 
-    <TextView
-        android:id="@+id/tvIslandTimer"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="00:00"
-        android:textColor="#AE89DD"
-        android:textSize="13sp"
-        android:paddingStart="8dp"
-        android:paddingEnd="0dp"
-        android:visibility="gone" />
+        android:layout_weight="1"
+        android:layout_marginHorizontal="10dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvIslandStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/voice_title"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <Chronometer
+            android:id="@+id/tvIslandTimer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/primary_light"
+            android:textSize="13sp" />
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/btnIslandEnd"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="@drawable/bg_circle"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_end_call"
-        android:padding="6dp"
-        android:contentDescription="End Call" />
-
+        android:contentDescription="@string/voice_end" />
 </LinearLayout>

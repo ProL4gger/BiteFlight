@@ -11,7 +11,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-internal enum class CallState { READY, DIALING, INCOMING, CONNECTING, ACTIVE, ENDING, UNAVAILABLE }
+enum class CallState { READY, DIALING, INCOMING, CONNECTING, ACTIVE, ENDING, UNAVAILABLE }
 
 /** One direct IPv4 SIP dialog over UDP. All signaling state is owned by the executor. */
 internal class SipCall(
@@ -73,7 +73,10 @@ internal class SipCall(
 
     private fun openListener(retries: Int) {
         val listener = try {
-            DatagramSocket(listenPort)
+            DatagramSocket(null).apply {
+                reuseAddress = true
+                bind(InetSocketAddress(listenPort))
+            }
         } catch (error: BindException) {
             if (retries == 0) throw error
             synchronized(executor) {
@@ -108,7 +111,7 @@ internal class SipCall(
         if (state != CallState.INCOMING) return@submit
         val ok = respondToInvite(call, "200 OK", SipMessage.sdp(call.local, call.media.port))
         report(CallState.CONNECTING, "Connecting…")
-        repeatUntilAnswered(call.peer, ok, 32_000, sendNow = false)
+        repeatUntilAnswered(call.peer, ok, 32_000, sendNow = true)
     }
 
     fun hangUp() = submit { endCall() }

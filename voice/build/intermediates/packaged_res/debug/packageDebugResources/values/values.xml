@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="accent_mid">#8755C4</color>
+    <color name="accent_panel">#E9DAF8</color>
+    <color name="accent_soft">#AE89DD</color>
+    <color name="background">#FFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="border_color">#D8BEEF</color>
+    <color name="error">#B00020</color>
+    <color name="primary">#6335A1</color>
+    <color name="primary_dark">#472375</color>
+    <color name="primary_light">#F2EAFB</color>
+    <color name="secondary">#8755C4</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#28232E</color>
+    <color name="text_secondary">#6C5C79</color>
+    <color name="white">#FFFFFFFF</color>
     <item name="voice_remote_address" type="id"/>
     <item name="voice_remote_port" type="id"/>
     <string name="voice_answer">Answer</string>
@@ -19,4 +34,9 @@
     <string name="voice_self_call">Enter the address of the other device.</string>
     <string name="voice_starting">Starting voice listener…</string>
     <string name="voice_title">Voice call</string>
+    <style name="Theme.BiteFlight.Voice" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="android:windowBackground">@color/background</item>
+    </style>
 </resources>

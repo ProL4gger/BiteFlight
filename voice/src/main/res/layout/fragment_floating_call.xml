@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="48dp"
+    android:layout_gravity="center_horizontal"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="8dp"
+    android:background="@drawable/bg_floating_island"
+    android:elevation="16dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/tvIslandStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Call"
+        android:textColor="@android:color/white"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvIslandTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:textColor="#AE89DD"
+        android:textSize="13sp"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/btnIslandEnd"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_circle"
+        android:src="@drawable/ic_end_call"
+        android:padding="6dp"
+        android:contentDescription="End Call" />
+
+</LinearLayout>

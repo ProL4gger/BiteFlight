@@ -1,40 +1,40 @@
 -- Merging decision tree log ---
 manifest
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:1:1-12:12
-INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:1:1-12:12
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:1:1-12:12
+INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:1:1-12:12
 	package
-		INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml
 	xmlns:android
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:1:11-69
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:1:11-69
 uses-permission#android.permission.INTERNET
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:2:5-67
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:2:5-67
 	android:name
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:2:22-64
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:2:22-64
 uses-permission#android.permission.RECORD_AUDIO
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:3:5-71
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:3:5-71
 	android:name
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:3:22-68
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:3:22-68
 uses-permission#android.permission.MODIFY_AUDIO_SETTINGS
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:4:5-80
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:4:5-80
 	android:name
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:4:22-77
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:4:22-77
 application
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:5:5-11:19
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:5:5-11:19
 activity#com.example.biteflight.voice.VoiceCallActivity
-ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:6:9-10:58
+ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:6:9-10:58
 	android:screenOrientation
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:9:13-49
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:9:13-49
 	android:windowSoftInputMode
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:10:13-55
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:10:13-55
 	android:exported
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:8:13-37
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:8:13-37
 	android:name
-		ADDED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:7:13-74
+		ADDED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:7:13-74
 uses-sdk
-INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml
-INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml
+INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml
+INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml
 	android:targetSdkVersion
-		INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml

@@ -25,10 +25,10 @@ id btnAnswer
 id btnBack
 id btnCall
 id btnEndCall
+id btnIslandCall
 id btnIslandEnd
 id etRemoteAddress
 id etRemotePort
-id floating_call_container
 id topToolbar
 id tvCallStatus
 id tvIslandStatus
@@ -40,8 +40,7 @@ id voice_remote_address
 id voice_remote_port
 layout activity_voice_call
 layout activity_voice_call_host
-layout fragment_floating_call
-layout view_floating_call_container
+layout view_floating_call
 string voice_answer
 string voice_back
 string voice_call

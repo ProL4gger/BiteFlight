@@ -1,5 +1,17 @@
 <resources>
     <string name="app_name">BiteFlight</string>
+    <string name="sign_up_location_required">Confirm a location on the map to sign up.</string>
+    <string name="sign_up_location_selected">Location confirmed</string>
+    <string name="sign_up_pick_location">Pick location on map</string>
+    <string name="sign_up_change_location">Change location</string>
+    <string name="sign_up_governorate">Governorate *</string>
+    <string name="sign_up_area">Area / District *</string>
+    <string name="sign_up_other_area">Other area</string>
+    <string name="sign_up_other_area_name">Area name *</string>
+    <string name="sign_up_select_governorate">Select a governorate.</string>
+    <string name="sign_up_select_area">Select an area.</string>
+    <string name="sign_up_enter_area">Enter your area name.</string>
+    <string name="sign_up_street_optional">Street name (optional)</string>
     <string name="seller_order_notification_channel">Incoming orders</string>
     <string name="seller_order_notification_title">New order received</string>
     <string name="seller_order_notification_body">Order #%1$s has arrived. Tap to view your orders.</string>

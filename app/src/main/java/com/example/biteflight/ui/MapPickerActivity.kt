@@ -33,9 +33,9 @@ class MapPickerActivity : AppCompatActivity() {
     private var map: MapLibreMap? = null
 
     private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) centerOnMyLocation()
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        if (LocationHelper.hasPermission(this)) centerOnMyLocation()
         else Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
     }
 
@@ -66,7 +66,10 @@ class MapPickerActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnMyLocation).setOnClickListener {
             if (LocationHelper.hasPermission(this)) centerOnMyLocation()
-            else permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            else permissionLauncher.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ))
         }
 
         findViewById<Button>(R.id.btnConfirmPin).setOnClickListener {

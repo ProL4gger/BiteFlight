@@ -46,13 +46,6 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Seller" />
-
-            <RadioButton
-                android:id="@+id/radioDelivery"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Delivery" />
         </RadioGroup>
 
         <!-- Full Name -->
@@ -116,27 +109,61 @@
             app:layout_constraintTop_toBottomOf="@id/etPhone"
             app:layout_constraintStart_toStartOf="parent" />
 
-        <!-- City -->
-        <EditText
-            android:id="@+id/etCity"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/governorateField"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_edit_text"
-            android:hint="City / Governorate *"
-            android:paddingHorizontal="16dp"
-            app:layout_constraintTop_toBottomOf="@id/tvAddressHeader" />
+            android:hint="@string/sign_up_governorate"
+            app:layout_constraintTop_toBottomOf="@id/tvAddressHeader">
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/governorateDropdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:saveEnabled="false" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Area -->
-        <EditText
-            android:id="@+id/etArea"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/areaField"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_edit_text"
-            android:hint="Area / District *"
-            android:paddingHorizontal="16dp"
-            app:layout_constraintTop_toBottomOf="@id/etCity" />
+            android:hint="@string/sign_up_area"
+            app:layout_constraintTop_toBottomOf="@id/governorateField">
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/areaDropdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:saveEnabled="false" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/otherAreaField"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="@string/sign_up_other_area_name"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/areaField">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etOtherArea"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/areaBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierAllowsGoneWidgets="false"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="areaField,otherAreaField" />
 
         <!-- Street -->
         <EditText
@@ -145,9 +172,28 @@
             android:layout_height="55dp"
             android:layout_marginTop="12dp"
             android:background="@drawable/bg_edit_text"
-            android:hint="Street Name *"
+            android:hint="@string/sign_up_street_optional"
             android:paddingHorizontal="16dp"
-            app:layout_constraintTop_toBottomOf="@id/etArea" />
+            app:layout_constraintTop_toBottomOf="@id/areaBottom" />
+
+        <TextView
+            android:id="@+id/tvSignUpLocation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:accessibilityLiveRegion="polite"
+            android:text="@string/sign_up_location_required"
+            android:textColor="#333333"
+            app:layout_constraintTop_toBottomOf="@id/etStreet" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPickSignUpLocation"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/sign_up_pick_location"
+            app:layout_constraintTop_toBottomOf="@id/tvSignUpLocation" />
 
         <!-- Sign Up Button -->
         <Button
@@ -157,7 +203,7 @@
             android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp"
             android:text="Sign Up"
-            app:layout_constraintTop_toBottomOf="@id/etStreet"
+            app:layout_constraintTop_toBottomOf="@id/btnPickSignUpLocation"
             app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

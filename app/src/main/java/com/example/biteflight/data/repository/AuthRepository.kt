@@ -3,6 +3,7 @@ package com.example.biteflight.data.repository
 
 import android.util.Log
 import com.example.biteflight.data.model.User
+import com.example.biteflight.utils.LocationHelper
 import com.example.biteflight.utils.Resource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -24,6 +25,17 @@ class AuthRepository(
         password: String,
         onResult: (Resource<FirebaseUser>) -> Unit
     ) {
+        val hasLocation = when (user.role.uppercase()) {
+            User.ROLE_BUYER -> LocationHelper.hasValidCoordinates(
+                user.deliveryAddressDetails.lat, user.deliveryAddressDetails.lng
+            )
+            User.ROLE_SELLER -> LocationHelper.hasValidCoordinates(user.lat, user.lng)
+            else -> true
+        }
+        if (!hasLocation) {
+            onResult(Resource.Error("Choose and confirm a location on the map before signing up."))
+            return
+        }
         onResult(Resource.Loading)
 
         auth.createUserWithEmailAndPassword(user.email, password)

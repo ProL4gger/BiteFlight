@@ -18,6 +18,9 @@ object LocationHelper {
 
     private val main = Handler(Looper.getMainLooper())
 
+    fun hasValidCoordinates(lat: Double, lng: Double): Boolean =
+        lat in -90.0..90.0 && lng in -180.0..180.0 && (lat != 0.0 || lng != 0.0)
+
     fun hasPermission(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED

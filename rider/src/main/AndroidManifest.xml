@@ -21,6 +21,7 @@
         android:required="false"/>
 
     <application
+        android:name="com.example.biteflight.voice.VoiceCallApplication"
         android:allowBackup="false"
         android:label="BiteFlight Rider"
         android:supportsRtl="true"

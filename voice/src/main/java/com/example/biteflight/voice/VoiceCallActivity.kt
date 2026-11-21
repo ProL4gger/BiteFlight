@@ -1,10 +1,13 @@
 package com.example.biteflight.voice
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.media.AudioManager
 import android.os.Bundle
+import android.os.IBinder
 import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
@@ -19,15 +22,29 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import com.example.biteflight.voice.VoiceCallService.Companion.LISTEN_PORT
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.NetworkInterface
 
 class VoiceCallActivity : AppCompatActivity() {
-    private var session: SipCall? = null
+    private var session: VoiceCallService.Connection? = null
+    private var bound = false
+    private var stopObserving: (() -> Unit)? = null
     private var onMicrophoneGranted: (() -> Unit)? = null
-    private var currentCallback: Any? = null
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val callService = service as VoiceCallService.Connection
+            session = callService
+            stopObserving = callService.observe(::render)
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            detachCall()
+            render(CallState.UNAVAILABLE, getString(R.string.voice_starting))
+        }
+    }
     private lateinit var address: EditText
     private lateinit var port: EditText
     private lateinit var localAddress: TextView
@@ -110,23 +127,22 @@ class VoiceCallActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         localAddress.text = getString(R.string.voice_local_address, localIpv4Addresses(), LISTEN_PORT)
-        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val callbackToken = Any()
-        currentCallback = callbackToken
-        session = SipCall(LISTEN_PORT, audio) { next, message ->
-            runOnUiThread {
-                if (currentCallback === callbackToken) render(next, message)
-            }
-        }
+        bound = bindService(Intent(this, VoiceCallService::class.java), serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onStop() {
-        currentCallback = null
         onMicrophoneGranted = null
-        session?.close()
-        session = null
+        detachCall()
+        if (bound) unbindService(serviceConnection)
+        bound = false
         render(CallState.UNAVAILABLE, getString(R.string.voice_starting))
         super.onStop()
+    }
+
+    private fun detachCall() {
+        stopObserving?.invoke()
+        stopObserving = null
+        session = null
     }
 
     private fun render(state: CallState, message: String) {
@@ -184,7 +200,4 @@ class VoiceCallActivity : AppCompatActivity() {
             .joinToString(", ")
     }.getOrDefault("").ifEmpty { getString(R.string.voice_no_address) }
 
-    private companion object {
-        const val LISTEN_PORT = 5060
-    }
 }

@@ -18,4 +18,6 @@
     <string name="voice_invalid_address">Enter a valid IPv4 address.</string>
     <string name="voice_invalid_port">Enter a port from 1 to 65535.</string>
     <string name="voice_self_call">Enter the address of the other device.</string>
+    <string name="voice_notification_channel">Voice calls</string>
+    <string name="voice_background_unavailable">Couldn’t start the call. Check microphone access and try again.</string>
 </resources>

@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.biteflight.voice.VoiceCallActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
@@ -67,6 +68,9 @@ class RiderDashboardActivity : AppCompatActivity() {
             return
         }
         setContentView(R.layout.activity_rider_dashboard)
+        findViewById<Button>(R.id.btnVoiceCall).setOnClickListener {
+            startActivity(Intent(this, VoiceCallActivity::class.java))
+        }
         tvStatus = findViewById(R.id.tvStatus)
         tvLocation = findViewById(R.id.tvLocation)
         tvOrder = findViewById(R.id.tvOrder)

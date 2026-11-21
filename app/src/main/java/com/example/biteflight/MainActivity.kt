@@ -23,6 +23,7 @@ import com.example.biteflight.ui.buyer.BuyerNavigation
 import com.example.biteflight.ui.buyer.BuyerPagerAdapter
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 import com.example.biteflight.utils.BuyerOrderAlerts
+import com.example.biteflight.voice.VoiceCallActivity
 import androidx.lifecycle.Lifecycle
 import com.example.biteflight.utils.Resource
 import com.google.firebase.auth.FirebaseAuth
@@ -69,6 +70,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupSettingsMenu()
+        findViewById<View>(R.id.btnVoiceCall).setOnClickListener {
+            startActivity(Intent(this, VoiceCallActivity::class.java))
+        }
         checkUserRoleAndRoute()
     }
 

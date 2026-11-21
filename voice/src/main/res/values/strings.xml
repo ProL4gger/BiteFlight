@@ -1,0 +1,21 @@
+<resources>
+    <item name="voice_remote_address" type="id" />
+    <item name="voice_remote_port" type="id" />
+    <string name="voice_title">Voice call</string>
+    <string name="voice_instructions">Open this screen on both devices on the same Wi-Fi network. Enter the other device’s IP address and port.</string>
+    <string name="voice_local_address">Your IPv4 address: %1$s\nListening port: %2$d</string>
+    <string name="voice_no_address">Unavailable</string>
+    <string name="voice_remote_address">Other device’s IPv4 address</string>
+    <string name="voice_remote_port">Other device’s SIP port</string>
+    <string name="voice_starting">Starting voice listener…</string>
+    <string name="voice_call">Call</string>
+    <string name="voice_answer">Answer</string>
+    <string name="voice_decline">Decline</string>
+    <string name="voice_cancel">Cancel call</string>
+    <string name="voice_end">End call</string>
+    <string name="voice_back">Back</string>
+    <string name="voice_microphone_required">Allow microphone access to place or answer a call.</string>
+    <string name="voice_invalid_address">Enter a valid IPv4 address.</string>
+    <string name="voice_invalid_port">Enter a port from 1 to 65535.</string>
+    <string name="voice_self_call">Enter the address of the other device.</string>
+</resources>

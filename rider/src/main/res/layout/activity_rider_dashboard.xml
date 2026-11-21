@@ -29,6 +29,20 @@
             android:textSize="16sp"
             android:layout_marginTop="8dp"/>
 
+        <Button
+            android:id="@+id/btnVoiceCall"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#6535A0"
+            android:drawableStart="@drawable/ic_voice_call"
+            android:drawablePadding="8dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/voice_title"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

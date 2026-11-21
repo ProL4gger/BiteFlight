@@ -46,6 +46,7 @@ android {
 
 
 dependencies {
+    implementation(project(":voice"))
 
     // Android UI
     implementation(libs.androidx.core.ktx)

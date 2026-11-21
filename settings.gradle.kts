@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "BiteFlight"
 include(":app")
 include(":rider")
+include(":voice")

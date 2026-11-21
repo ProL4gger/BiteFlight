@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">BiteFlight</string>
+    <string name="seller_order_notification_channel">Incoming orders</string>
+    <string name="seller_order_notification_title">New order received</string>
+    <string name="seller_order_notification_body">Order #%1$s has arrived. Tap to view your orders.</string>
+    <string name="seller_order_notification_permission">Enable notifications in Settings to receive incoming order alerts.</string>
 </resources>

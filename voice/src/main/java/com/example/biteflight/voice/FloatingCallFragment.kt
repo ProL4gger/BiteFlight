@@ -96,24 +96,11 @@ class FloatingCallFragment : Fragment() {
         startTime = System.currentTimeMillis()
         handler.post(timerRunnable)
         updateState(VoipManager.currentState, VoipManager.currentMessage)
-
-        VoipManager.listeners.add(::onVoipStateChanged)
     }
 
     override fun onDestroyView() {
         handler.removeCallbacks(timerRunnable)
-        VoipManager.listeners.remove(::onVoipStateChanged)
         super.onDestroyView()
-    }
-
-    private fun onVoipStateChanged(state: CallState, message: String) {
-        activity?.runOnUiThread {
-            if (state == CallState.READY || state == CallState.UNAVAILABLE) {
-                parentFragmentManager.beginTransaction().remove(this).commitAllowingStateLoss()
-            } else {
-                updateState(state, message)
-            }
-        }
     }
 
     fun updateState(state: CallState, message: String) {
@@ -129,30 +116,64 @@ class FloatingCallFragment : Fragment() {
 
     companion object {
         fun attach(activity: AppCompatActivity) {
-            if (VoipManager.currentState == CallState.READY || VoipManager.currentState == CallState.UNAVAILABLE) {
-                return
-            }
-            val existing = activity.supportFragmentManager.findFragmentByTag("voip_island_fragment")
-            if (existing != null) return
-
             val content = activity.findViewById<ViewGroup>(android.R.id.content)
-            var containerId = activity.resources.getIdentifier("voip_fragment_container", "id", activity.packageName)
-            if (containerId == 0) {
-                containerId = 999999
-                val container = FrameLayout(activity).apply { id = containerId }
-                val density = activity.resources.displayMetrics.density
-                val height = (60 * density).toInt()
-                val marginB = (80 * density).toInt()
-                val params = FrameLayout.LayoutParams(-1, height).apply {
-                    gravity = Gravity.BOTTOM
+            val rootView = content.getChildAt(0) as? ViewGroup ?: content
+
+            val containerId = 777777
+            var container = rootView.findViewById<FrameLayout>(containerId)
+            val density = activity.resources.displayMetrics.density
+            val height = (56 * density).toInt()
+            val marginB = (90 * density).toInt()
+
+            if (container == null) {
+                container = FrameLayout(activity).apply { id = containerId }
+                rootView.addView(container, FrameLayout.LayoutParams(-2, height, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL).apply {
                     setMargins(0, 0, 0, marginB)
+                })
+            }
+            container.bringToFront()
+
+            val shouldShow = VoipManager.currentState != CallState.READY && VoipManager.currentState != CallState.UNAVAILABLE
+            val existingFrag = activity.supportFragmentManager.findFragmentByTag("voip_island_fragment") as? FloatingCallFragment
+
+            if (shouldShow) {
+                if (existingFrag == null) {
+                    activity.supportFragmentManager.beginTransaction()
+                        .replace(containerId, FloatingCallFragment(), "voip_island_fragment")
+                        .commitAllowingStateLoss()
                 }
-                content.addView(container, params)
+            } else {
+                if (existingFrag != null) {
+                    activity.supportFragmentManager.beginTransaction()
+                        .remove(existingFrag)
+                        .commitAllowingStateLoss()
+                }
             }
 
-            activity.supportFragmentManager.beginTransaction()
-                .add(containerId, FloatingCallFragment(), "voip_island_fragment")
-                .commitAllowingStateLoss()
+            // Register state listener for this activity
+            val listener: (CallState, String) -> Unit = { state, message ->
+                activity.runOnUiThread {
+                    val f = activity.supportFragmentManager.findFragmentByTag("voip_island_fragment") as? FloatingCallFragment
+                    if (state == CallState.READY || state == CallState.UNAVAILABLE) {
+                        if (f != null) {
+                            activity.supportFragmentManager.beginTransaction().remove(f).commitAllowingStateLoss()
+                        }
+                    } else {
+                        if (f == null) {
+                            val frag = FloatingCallFragment()
+                            activity.supportFragmentManager.beginTransaction()
+                                .replace(containerId, frag, "voip_island_fragment")
+                                .commitAllowingStateLoss()
+                        } else {
+                            f.updateState(state, message)
+                        }
+                    }
+                }
+            }
+
+            // Avoid duplicate listeners
+            VoipManager.listeners.remove(listener)
+            VoipManager.listeners.add(listener)
         }
     }
 }

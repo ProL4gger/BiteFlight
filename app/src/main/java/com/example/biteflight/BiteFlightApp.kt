@@ -3,12 +3,13 @@ package com.example.biteflight
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import com.example.biteflight.voice.FloatingCallFragment
+import com.example.biteflight.voice.FloatingCallOverlay
 import com.example.biteflight.voice.VoipManager
 import org.osmdroid.config.Configuration
 
 class BiteFlightApp : Application(), Application.ActivityLifecycleCallbacks {
+    private val floatingCall = FloatingCallOverlay()
+
     override fun onCreate() {
         super.onCreate()
         val prefs = getSharedPreferences("osm_prefs", MODE_PRIVATE)
@@ -20,14 +21,12 @@ class BiteFlightApp : Application(), Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityResumed(activity: Activity) {
-        if (activity is AppCompatActivity) {
-            FloatingCallFragment.attach(activity)
-        }
+        floatingCall.onActivityResumed(activity)
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
     override fun onActivityStarted(activity: Activity) {}
-    override fun onActivityPaused(activity: Activity) {}
+    override fun onActivityPaused(activity: Activity) = floatingCall.onActivityPaused(activity)
     override fun onActivityStopped(activity: Activity) {}
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
     override fun onActivityDestroyed(activity: Activity) {}

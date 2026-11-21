@@ -7,27 +7,27 @@
 5-->INJECTED
 6
 7    <uses-permission android:name="android.permission.INTERNET" />
-7-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:2:5-67
-7-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:2:22-64
+7-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:2:5-67
+7-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:2:22-64
 8    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-8-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:3:5-71
-8-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:3:22-68
+8-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:3:5-71
+8-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:3:22-68
 9    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-9-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:4:5-80
-9-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:4:22-77
+9-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:4:5-80
+9-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:4:22-77
 10
 11    <application>
-11-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:5:5-11:19
+11-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:5:5-11:19
 12        <activity
-12-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:6:9-10:58
+12-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:6:9-10:58
 13            android:name="com.example.biteflight.voice.VoiceCallActivity"
-13-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:7:13-74
+13-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:7:13-74
 14            android:exported="false"
-14-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:8:13-37
+14-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:8:13-37
 15            android:screenOrientation="portrait"
-15-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:9:13-49
+15-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:9:13-49
 16            android:windowSoftInputMode="adjustResize" />
-16-->C:\Users\DELL\Desktop\BiteFlight\voice\src\main\AndroidManifest.xml:10:13-55
+16-->E:\AndroidStudioProjects\BiteFlight\voice\src\main\AndroidManifest.xml:10:13-55
 17    </application>
 18
 19</manifest>

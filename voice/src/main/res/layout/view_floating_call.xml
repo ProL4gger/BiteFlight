@@ -14,12 +14,13 @@
     android:clickable="true"
     android:focusable="true">
 
-    <ImageView
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+    <ImageButton
+        android:id="@+id/btnIslandCall"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:background="@drawable/bg_floating_call_icon"
-        android:padding="9dp"
-        android:importantForAccessibility="no"
+        android:contentDescription="@string/voice_floating_open"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_voice_call" />
 
     <LinearLayout

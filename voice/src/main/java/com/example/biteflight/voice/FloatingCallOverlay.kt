@@ -86,6 +86,7 @@ class FloatingCallOverlay {
         private val view = activity.layoutInflater.inflate(R.layout.view_floating_call, content, false)
         private val status = view.findViewById<TextView>(R.id.tvIslandStatus)
         private val timer = view.findViewById<Chronometer>(R.id.tvIslandTimer)
+        private val call = view.findViewById<ImageButton>(R.id.btnIslandCall)
         private val endCall = view.findViewById<ImageButton>(R.id.btnIslandEnd)
         private val density = activity.resources.displayMetrics.density
         private val touchSlop = ViewConfiguration.get(activity).scaledTouchSlop
@@ -95,10 +96,9 @@ class FloatingCallOverlay {
         }
 
         init {
-            view.setOnClickListener {
-                activity.startActivity(Intent(activity, VoiceCallActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                })
+            view.setOnClickListener { openCallScreen() }
+            call.setOnClickListener {
+                openCallScreen(answerIncoming = VoipManager.currentState == CallState.INCOMING)
             }
             ViewCompat.replaceAccessibilityAction(
                 view, AccessibilityActionCompat.ACTION_CLICK, activity.getString(R.string.voice_floating_open)
@@ -122,6 +122,9 @@ class FloatingCallOverlay {
 
         fun render(state: CallState, label: Int, start: Long?) {
             status.setText(label)
+            call.contentDescription = view.context.getString(
+                if (state == CallState.INCOMING) R.string.voice_answer else R.string.voice_floating_open
+            )
             endCall.isEnabled = state != CallState.ENDING
             endCall.contentDescription = view.context.getString(when (state) {
                 CallState.INCOMING -> R.string.voice_decline
@@ -142,6 +145,14 @@ class FloatingCallOverlay {
             timer.stop()
             content.removeOnLayoutChangeListener(onContentLayout)
             content.removeView(view)
+        }
+
+        private fun openCallScreen(answerIncoming: Boolean = false) {
+            val context = view.context
+            context.startActivity(Intent(context, VoiceCallActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                if (answerIncoming) action = VoiceCallActivity.ACTION_ANSWER_INCOMING
+            })
         }
 
         private fun safeArea(): RectF {
@@ -182,7 +193,7 @@ class FloatingCallOverlay {
             val saved = position
             view.x = bounds.left + bounds.width() * (saved?.x ?: 0.5f)
             view.y = if (saved == null) {
-                (bounds.bottom - dp(72)).coerceAtLeast(bounds.top)
+                (bounds.top + dp(12)).coerceAtMost(bounds.bottom)
             } else {
                 bounds.top + bounds.height() * saved.y
             }

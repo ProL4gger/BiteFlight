@@ -1,5 +1,6 @@
 package com.example.biteflight.voice
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
@@ -26,5 +27,20 @@ class VoiceCallActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    internal fun consumeAnswerRequest(): Boolean {
+        if (intent.action != ACTION_ANSWER_INCOMING) return false
+        intent.action = null
+        return true
+    }
+
+    internal companion object {
+        const val ACTION_ANSWER_INCOMING = "com.example.biteflight.voice.action.ANSWER_INCOMING"
     }
 }

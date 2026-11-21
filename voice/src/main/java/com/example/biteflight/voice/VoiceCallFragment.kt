@@ -66,9 +66,7 @@ class VoiceCallFragment : Fragment() {
             val destination = destination() ?: return@setOnClickListener
             withMicrophone { VoipManager.dial(destination) }
         }
-        answer.setOnClickListener {
-            withMicrophone { VoipManager.answer() }
-        }
+        answer.setOnClickListener { answerIncoming() }
         end.setOnClickListener { VoipManager.hangUp() }
         view.findViewById<MaterialButton>(R.id.btnBack).setOnClickListener {
             requireActivity().finish()
@@ -87,6 +85,20 @@ class VoiceCallFragment : Fragment() {
     override fun onStop() {
         VoipManager.listeners.remove(::onVoipStateChanged)
         super.onStop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if ((activity as? VoiceCallActivity)?.consumeAnswerRequest() == true) {
+            answerIncoming()
+        }
+    }
+
+    private fun answerIncoming() {
+        if (VoipManager.currentState != CallState.INCOMING) return
+        withMicrophone {
+            if (VoipManager.currentState == CallState.INCOMING) VoipManager.answer()
+        }
     }
 
     private fun onVoipStateChanged(state: CallState, message: String) {

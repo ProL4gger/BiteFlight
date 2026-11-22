@@ -18,6 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.BiteFlight">
+        <activity android:name=".ui.buyer.CurrentOrderActivity" android:exported="false" />
         <activity android:name=".ui.seller.SellerAvailabilityActivity"
             android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity

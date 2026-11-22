@@ -13,6 +13,11 @@ object VoipManager {
         private set
     var currentMessage = "Ready for calls"
         private set
+    @Volatile
+    var peerName: String? = null
+        private set
+    internal val isMuted get() = sipCall?.isMuted == true
+    internal val isSpeakerOn get() = sipCall?.isSpeakerOn == true
     var activePeerAddress: String = ""
     var activePeerPort: Int = 5060
     @Volatile
@@ -32,6 +37,7 @@ object VoipManager {
             } else {
                 null
             }
+            if (state == CallState.INCOMING || state == CallState.READY || state == CallState.UNAVAILABLE) peerName = null
             currentMessage = message
             currentState = state
             listeners.forEach { it(state, message) }
@@ -44,11 +50,16 @@ object VoipManager {
         }
     }
 
-    fun dial(peer: InetSocketAddress) {
+    fun dial(peer: InetSocketAddress, name: String? = null) {
+        if (currentState != CallState.READY) return
+        peerName = name
         activePeerAddress = peer.address.hostAddress ?: ""
         activePeerPort = peer.port
         sipCall?.dial(peer)
     }
+
+    internal fun setMuted(muted: Boolean) { sipCall?.setMuted(muted) }
+    internal fun setSpeaker(enabled: Boolean) { sipCall?.setSpeaker(enabled) }
 
     fun answer() {
         sipCall?.answer()

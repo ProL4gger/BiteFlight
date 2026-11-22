@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="rider">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-14T18:13:10.271251100Z">
+        <DropdownSelection timestamp="2026-11-22T09:50:00.908933600Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=RF8NA2RMPCB" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\DELL\.android\avd\Pixel_7.avd" />
             </handle>
           </Target>
         </DropdownSelection>

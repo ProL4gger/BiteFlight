@@ -32,6 +32,8 @@ internal object Pcmu {
 
 internal class RtpAudio : AutoCloseable {
     private val socket = DatagramSocket()
+    @Volatile
+    var muted = false
     val port: Int get() = socket.localPort
 
     fun start(peer: InetSocketAddress, onError: () -> Unit) {
@@ -74,7 +76,8 @@ internal class RtpAudio : AutoCloseable {
                 data.clear()
                 data.put(0x80.toByte()).put(0.toByte()).putShort(sequence++.toShort())
                 data.putInt(timestamp).putInt(ssrc)
-                samples.forEach { data.put(Pcmu.encode(it)) }
+                val silent = muted
+                samples.forEach { data.put(Pcmu.encode(if (silent) 0 else it)) }
                 socket.send(packet)
                 timestamp += FRAME_SAMPLES
                 offset = 0

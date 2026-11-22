@@ -87,13 +87,6 @@ class VoiceCallFragment : Fragment() {
         super.onStop()
     }
 
-    override fun onResume() {
-        super.onResume()
-        if ((activity as? VoiceCallActivity)?.consumeAnswerRequest() == true) {
-            answerIncoming()
-        }
-    }
-
     private fun answerIncoming() {
         if (VoipManager.currentState != CallState.INCOMING) return
         withMicrophone {

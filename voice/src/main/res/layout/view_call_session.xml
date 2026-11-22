@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/callSession"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#231634"
+    android:fillViewport="true"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/callSessionBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="start"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/voice_minimize"
+            android:src="@drawable/ic_back"
+            android:tint="#FFFFFF" />
+
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:background="@drawable/bg_floating_call_icon"
+            android:importantForAccessibility="no"
+            android:padding="26dp"
+            android:src="@drawable/ic_voice_call" />
+
+        <TextView
+            android:id="@+id/sessionName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:textColor="#FFFFFF"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/sessionStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="#DBCEE8"
+            android:textSize="16sp" />
+
+        <Chronometer
+            android:id="@+id/sessionTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:visibility="gone" />
+
+        <Space
+            android:layout_width="1dp"
+            android:layout_height="32dp"
+            android:layout_weight="2" />
+
+        <LinearLayout
+            android:id="@+id/sessionAudioControls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sessionMute"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:minHeight="56dp"
+                android:text="@string/voice_mute"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="@color/voice_audio_control"
+                android:checkable="true" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sessionSpeaker"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:minHeight="56dp"
+                android:text="@string/voice_speaker"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="@color/voice_audio_control"
+                android:checkable="true" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sessionAnswer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:text="@string/voice_answer"
+            android:textColor="#FFFFFF"
+            android:visibility="gone"
+            app:backgroundTint="#18734C"
+            app:icon="@drawable/ic_voice_call"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sessionEnd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="56dp"
+            android:text="@string/voice_end"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#BA2947"
+            app:icon="@drawable/ic_end_call"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF" />
+    </LinearLayout>
+</ScrollView>

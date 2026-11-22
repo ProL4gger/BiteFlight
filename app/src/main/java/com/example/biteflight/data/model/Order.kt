@@ -23,3 +23,8 @@ fun orderStatusLabel(status: String): String = when (status.uppercase()) {
     "DELIVERED", "COMPLETED" -> "Delivered"
     else -> status.replace('_', ' ')
 }
+
+fun isCurrentOrder(status: String): Boolean = when (status.uppercase()) {
+    "PLACED", "ASSIGNED", "WAITING_AT_RESTAURANT", "PICKED_UP", "IN_AREA" -> true
+    else -> false
+}

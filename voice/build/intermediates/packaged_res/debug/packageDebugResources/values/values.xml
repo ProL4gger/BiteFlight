@@ -34,12 +34,17 @@
     <string name="voice_invalid_port">Enter a port from 1 to 65535.</string>
     <string name="voice_local_address">Your IPv4 address: %1$s\nListening port: %2$d</string>
     <string name="voice_microphone_required">Allow microphone access to place or answer a call.</string>
+    <string name="voice_minimize">Minimize call</string>
+    <string name="voice_mute">Mute</string>
     <string name="voice_no_address">Unavailable</string>
     <string name="voice_remote_address">Other device’s IPv4 address</string>
     <string name="voice_remote_port">Other device’s SIP port</string>
     <string name="voice_self_call">Enter the address of the other device.</string>
+    <string name="voice_speaker">Speaker</string>
     <string name="voice_starting">Starting voice listener…</string>
     <string name="voice_title">Voice call</string>
+    <string name="voice_unavailable">Couldn’t start the call. Try again in a moment.</string>
+    <string name="voice_unmute">Unmute</string>
     <style name="Theme.BiteFlight.Voice" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorSecondary">@color/secondary</item>

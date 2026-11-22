@@ -1,6 +1,8 @@
 package com.example.biteflight.voice
 
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import java.net.BindException
@@ -32,6 +34,7 @@ internal class SipCall(
         var reply: SipMessage? = null
         var ack: SipMessage? = null
         var audioMode: Int? = null
+        var previousSpeaker = false
         val callId get() = invite["call-id"]
 
         fun request(method: String, sequence: Int, useInviteBranch: Boolean = false): SipMessage =
@@ -63,6 +66,13 @@ internal class SipCall(
     private var dialog: Dialog? = null
     private var transaction: Transaction? = null
     private var state = CallState.UNAVAILABLE
+    private var message = ""
+    @Volatile
+    var isMuted = false
+        private set
+    @Volatile
+    var isSpeakerOn = false
+        private set
 
     init {
         submit { openListener(retries = 4) }
@@ -116,6 +126,33 @@ internal class SipCall(
 
     fun hangUp() = submit { endCall() }
 
+    fun setMuted(muted: Boolean) = submit {
+        if (state != CallState.ACTIVE) return@submit
+        dialog?.media?.muted = muted
+        isMuted = muted
+        update(state, message)
+    }
+
+    @Suppress("DEPRECATION")
+    fun setSpeaker(enabled: Boolean) = submit {
+        if (state != CallState.ACTIVE) return@submit
+        isSpeakerOn = if (Build.VERSION.SDK_INT >= 31) {
+            if (enabled) {
+                val speaker = audioManager.availableCommunicationDevices.firstOrNull {
+                    it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                }
+                speaker != null && audioManager.setCommunicationDevice(speaker)
+            } else {
+                audioManager.clearCommunicationDevice()
+                false
+            }
+        } else {
+            audioManager.isSpeakerphoneOn = enabled
+            enabled
+        }
+        update(state, message)
+    }
+
     private fun endCall() {
         val call = dialog ?: return
         when (state) {
@@ -138,9 +175,19 @@ internal class SipCall(
         repeatUntilAnswered(call.peer, call.request("BYE", 2), 5_000)
     }
 
+    @Suppress("DEPRECATION")
     private fun closeMedia(call: Dialog) {
         call.media.close()
-        call.audioMode?.let { audioManager.mode = it }
+        call.audioMode?.let {
+            if (Build.VERSION.SDK_INT >= 31) {
+                if (isSpeakerOn) audioManager.clearCommunicationDevice()
+            } else {
+                audioManager.isSpeakerphoneOn = call.previousSpeaker
+            }
+            audioManager.mode = it
+        }
+        isMuted = false
+        isSpeakerOn = false
         call.audioMode = null
     }
 
@@ -261,6 +308,8 @@ internal class SipCall(
     private fun startMedia(call: Dialog) {
         transaction = null
         call.audioMode = audioManager.mode
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT < 31) call.previousSpeaker = audioManager.isSpeakerphoneOn
         audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
         report(CallState.ACTIVE, "In call with ${call.peer.authority()}")
         try {
@@ -337,6 +386,7 @@ internal class SipCall(
 
     private fun report(next: CallState, message: String) {
         state = next
+        this.message = message
         update(next, message)
     }
 

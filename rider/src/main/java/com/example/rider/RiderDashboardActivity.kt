@@ -13,11 +13,14 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.biteflight.voice.OrderCallPresence
 import com.example.biteflight.voice.VoiceCallActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 
 class RiderDashboardActivity : AppCompatActivity() {
+    private var callPresence: OrderCallPresence? = null
+
     private val auth = FirebaseAuth.getInstance()
     private lateinit var tvStatus: TextView
     private lateinit var tvLocation: TextView
@@ -78,6 +81,7 @@ class RiderDashboardActivity : AppCompatActivity() {
         btnRefresh = findViewById(R.id.btnRefreshLocation)
         btnLogout = findViewById(R.id.btnLogout)
         btnDeliveryStage = findViewById(R.id.btnDeliveryStage)
+        callPresence = OrderCallPresence(uid, OrderCallPresence.DRIVER)
         deliveries = RiderDeliveryRepository(uid) { message ->
             if (!isFinishing && !isDestroyed) showMessage(message)
         }
@@ -302,6 +306,7 @@ class RiderDashboardActivity : AppCompatActivity() {
         super.onStop()
     }
     override fun onDestroy() {
+        callPresence?.close()
         assignmentListener?.let { assignmentRef?.removeEventListener(it) }
         jobListener?.let { jobRef?.removeEventListener(it) }
         // The foreground service survives dashboard destruction.

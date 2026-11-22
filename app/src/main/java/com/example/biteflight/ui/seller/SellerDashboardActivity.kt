@@ -19,10 +19,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.utils.SellerOrderAlerts
+import com.example.biteflight.voice.OrderCallPresence
 import com.example.biteflight.voice.VoiceCallActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class SellerDashboardActivity : AppCompatActivity() {
+    private var callPresence: OrderCallPresence? = null
+
 
     companion object {
         const val EXTRA_NOTIFICATION_SELLER_ID = "notificationSellerId"
@@ -111,9 +114,19 @@ class SellerDashboardActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (callPresence == null && !isFinishing) {
+            FirebaseAuth.getInstance().currentUser?.uid?.let {
+                callPresence = OrderCallPresence(it, OrderCallPresence.RESTAURANT)
+            }
+        }
         if (!isFinishing) {
             FirebaseAuth.getInstance().currentUser?.uid?.let(orderAlerts::start)
         }
+    }
+
+    override fun onDestroy() {
+        callPresence?.close()
+        super.onDestroy()
     }
 
     override fun onStop() {

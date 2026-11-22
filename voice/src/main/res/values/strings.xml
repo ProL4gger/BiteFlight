@@ -24,4 +24,9 @@
     <string name="voice_floating_active">Call in progress</string>
     <string name="voice_floating_ending">Ending call…</string>
     <string name="voice_floating_open">Open call controls</string>
+    <string name="voice_mute">Mute</string>
+    <string name="voice_unmute">Unmute</string>
+    <string name="voice_speaker">Speaker</string>
+    <string name="voice_minimize">Minimize call</string>
+    <string name="voice_unavailable">Couldn’t start the call. Try again in a moment.</string>
 </resources>

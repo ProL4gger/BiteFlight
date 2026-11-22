@@ -23,7 +23,8 @@ import com.example.biteflight.ui.buyer.BuyerNavigation
 import com.example.biteflight.ui.buyer.BuyerPagerAdapter
 import com.example.biteflight.ui.seller.SellerDashboardActivity
 import com.example.biteflight.utils.BuyerOrderAlerts
-import com.example.biteflight.voice.VoiceCallActivity
+import com.example.biteflight.ui.buyer.CurrentOrderActivity
+import com.example.biteflight.data.model.isCurrentOrder
 import androidx.lifecycle.Lifecycle
 import com.example.biteflight.utils.Resource
 import com.google.firebase.auth.FirebaseAuth
@@ -70,8 +71,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupSettingsMenu()
-        findViewById<View>(R.id.btnVoiceCall).setOnClickListener {
-            startActivity(Intent(this, VoiceCallActivity::class.java))
+        setCurrentOrderAvailable(false)
+        findViewById<View>(R.id.btnCurrentOrder).setOnClickListener {
+            startActivity(Intent(this, CurrentOrderActivity::class.java))
         }
         checkUserRoleAndRoute()
     }
@@ -173,7 +175,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startOrderAlerts() {
-        if (buyerReady) FirebaseAuth.getInstance().currentUser?.uid?.let { orderAlerts.start(it) }
+        if (!buyerReady) return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        orderAlerts.start(uid) { orders -> setCurrentOrderAvailable(orders.any { isCurrentOrder(it.status) }) }
+    }
+
+    private fun setCurrentOrderAvailable(available: Boolean) {
+        findViewById<View>(R.id.btnCurrentOrder).apply {
+            isEnabled = available
+            alpha = if (available) 1f else 0.35f
+            val label = if (available) R.string.current_order else R.string.no_current_order
+            contentDescription = getString(label)
+            androidx.appcompat.widget.TooltipCompat.setTooltipText(this, contentDescription)
+        }
     }
 
     override fun onStart() {
@@ -183,6 +197,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         orderAlerts.stop()
+        setCurrentOrderAvailable(false)
         super.onStop()
     }
 

@@ -2,6 +2,7 @@ package com.example.biteflight.utils
 
 import android.content.Context
 import android.widget.Toast
+import com.example.biteflight.data.model.Order
 import com.example.biteflight.data.model.orderStatusLabel
 import com.example.biteflight.data.repository.OrderRepository
 
@@ -11,10 +12,11 @@ class BuyerOrderAlerts(private val context: Context) {
     private val seen = mutableMapOf<String, String>()
     private val stages = listOf("PLACED", "ASSIGNED", "WAITING_AT_RESTAURANT", "PICKED_UP", "IN_AREA", "DELIVERED")
 
-    fun start(uid: String) {
+    fun start(uid: String, onOrdersChanged: (List<Order>) -> Unit) {
         if (unsubscribe != null) return
         seen.clear()
         unsubscribe = OrderRepository.observeBuyerOrders(uid, onOrders = { orders ->
+            onOrdersChanged(orders)
             orders.forEach { order ->
                 val status = order.status.uppercase()
                 val old = seen.put(order.id, status)

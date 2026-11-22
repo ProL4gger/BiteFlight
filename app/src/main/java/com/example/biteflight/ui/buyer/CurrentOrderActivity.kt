@@ -3,7 +3,6 @@ package com.example.biteflight.ui.buyer
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -13,7 +12,6 @@ import com.example.biteflight.data.model.Order
 import com.example.biteflight.data.model.isCurrentOrder
 import com.example.biteflight.data.model.orderStatusLabel
 import com.example.biteflight.data.repository.OrderRepository
-import com.example.biteflight.voice.OrderCallPresence
 import com.example.biteflight.voice.VoiceCallActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.auth.FirebaseAuth
@@ -22,7 +20,6 @@ import java.text.NumberFormat
 class CurrentOrderActivity : AppCompatActivity() {
     private var stopObserving: (() -> Unit)? = null
     private var current: Order? = null
-    private var loadingContact = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +31,8 @@ class CurrentOrderActivity : AppCompatActivity() {
             insets
         }
         findViewById<MaterialToolbar>(R.id.currentOrderToolbar).setNavigationOnClickListener { finish() }
-        findViewById<View>(R.id.callRestaurant).setOnClickListener { callContact(OrderCallPresence.RESTAURANT) }
-        findViewById<View>(R.id.callDriver).setOnClickListener { callContact(OrderCallPresence.DRIVER) }
+        findViewById<View>(R.id.callRestaurant).setOnClickListener { callContact(driver = false) }
+        findViewById<View>(R.id.callDriver).setOnClickListener { callContact(driver = true) }
     }
 
     override fun onStart() {
@@ -55,7 +52,6 @@ class CurrentOrderActivity : AppCompatActivity() {
     override fun onStop() {
         stopObserving?.invoke()
         stopObserving = null
-        loadingContact = false
         super.onStop()
     }
 
@@ -83,33 +79,16 @@ class CurrentOrderActivity : AppCompatActivity() {
     }
 
     private fun updateButtons() {
-        findViewById<View>(R.id.callRestaurant).isEnabled = current != null && !loadingContact
-        findViewById<View>(R.id.callDriver).isEnabled = !current?.riderId.isNullOrBlank() && !loadingContact
+        findViewById<View>(R.id.callRestaurant).isEnabled = current != null
+        findViewById<View>(R.id.callDriver).isEnabled = !current?.riderId.isNullOrBlank()
     }
 
-    private fun callContact(role: String) {
+    private fun callContact(driver: Boolean) {
         val order = current ?: return
-        if (loadingContact) return
-        val driver = role == OrderCallPresence.DRIVER
         val recipient = if (driver) order.riderId else order.sellerId
         if (recipient.isBlank() || order.sellerId.isBlank() || order.id.isBlank()) return
         val name = if (driver) getString(R.string.current_order_driver)
             else order.restaurantName.ifBlank { getString(R.string.current_order_restaurant) }
-        loadingContact = true
-        updateButtons()
-        OrderCallPresence.contacts(order.sellerId, order.id, role, recipient).get()
-            .addOnCompleteListener(this) { result ->
-                loadingContact = false
-                updateButtons()
-                val selected = current
-                if (selected?.id != order.id || (driver && selected.riderId != recipient)) return@addOnCompleteListener
-                val addresses = if (result.isSuccessful) {
-                    result.result.children.toList().asReversed()
-                        .flatMap { it.getValue(String::class.java).orEmpty().split(',') }
-                } else emptyList()
-                if (!VoiceCallActivity.startOrderCall(this, name, addresses)) {
-                    Toast.makeText(this, getString(R.string.current_order_contact_unavailable, name), Toast.LENGTH_LONG).show()
-                }
-            }
+        VoiceCallActivity.startOrderCall(this, order.sellerId, order.id, recipient, name)
     }
 }

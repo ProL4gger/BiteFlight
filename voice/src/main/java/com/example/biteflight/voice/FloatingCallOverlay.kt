@@ -150,8 +150,9 @@ class FloatingCallOverlay {
         private fun openCallScreen(answerIncoming: Boolean = false) {
             val context = view.context
             context.startActivity(Intent(context, VoiceCallActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                if (answerIncoming) action = VoiceCallActivity.ACTION_ANSWER_INCOMING
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                action = if (answerIncoming) VoiceCallActivity.ACTION_ANSWER_INCOMING
+                    else VoiceCallActivity.ACTION_VIEW_SESSION
             })
         }
 

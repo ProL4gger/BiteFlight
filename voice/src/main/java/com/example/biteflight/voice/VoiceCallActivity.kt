@@ -17,10 +17,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import java.net.Inet4Address
-import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.NetworkInterface
 
 class VoiceCallActivity : AppCompatActivity() {
     private var pendingAction: String? = null
@@ -68,7 +64,7 @@ class VoiceCallActivity : AppCompatActivity() {
         findViewById<View>(R.id.sessionMute).setOnClickListener { VoipManager.setMuted(!VoipManager.isMuted) }
         findViewById<View>(R.id.sessionSpeaker).setOnClickListener { VoipManager.setSpeaker(!VoipManager.isSpeakerOn) }
 
-        if (savedInstanceState == null && intent.action != ACTION_DIAL_ORDER) {
+        if (savedInstanceState == null && intent.action == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.voiceFragmentContainer, VoiceCallFragment())
                 .commit()
@@ -128,15 +124,22 @@ class VoiceCallActivity : AppCompatActivity() {
         when (action) {
             ACTION_ANSWER_INCOMING -> if (VoipManager.currentState == CallState.INCOMING) VoipManager.answer()
             ACTION_DIAL_ORDER -> {
-                val address = intent.getStringExtra(EXTRA_ADDRESS)
-                val peer = address?.let(::parseAddress)
-                if (peer == null || VoipManager.currentState != CallState.READY) {
+                val seller = intent.getStringExtra(EXTRA_SELLER)
+                val order = intent.getStringExtra(EXTRA_ORDER)
+                val recipient = intent.getStringExtra(EXTRA_RECIPIENT)
+                if (seller == null || order == null || recipient == null ||
+                    currentCallBusy()
+                ) {
                     Toast.makeText(this, R.string.voice_unavailable, Toast.LENGTH_SHORT).show()
                     finish()
                     return
                 }
                 awaitingDial = true
-                VoipManager.dial(InetSocketAddress(peer, LISTEN_PORT), intent.getStringExtra(EXTRA_NAME))
+                if (!VoipManager.dialOrder(seller, order, recipient, intent.getStringExtra(EXTRA_NAME).orEmpty())) {
+                    awaitingDial = false
+                    Toast.makeText(this, R.string.voice_unavailable, Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
         }
     }
@@ -144,9 +147,10 @@ class VoiceCallActivity : AppCompatActivity() {
     private fun render() {
         val state = VoipManager.currentState
         val inSession = state != CallState.READY && state != CallState.UNAVAILABLE
-        val orderCall = intent.hasExtra(EXTRA_ADDRESS)
+        val orderCall = intent.hasExtra(EXTRA_ORDER)
         val status = findViewById<TextView>(R.id.sessionStatus)
-        if (!inSession && sessionShown && !isFinishing) {
+        val reopeningSession = intent.action == ACTION_VIEW_SESSION || intent.action == ACTION_ANSWER_INCOMING
+        if (!inSession && (sessionShown || reopeningSession) && !isFinishing) {
             Toast.makeText(this, VoipManager.currentMessage, Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -197,46 +201,26 @@ class VoiceCallActivity : AppCompatActivity() {
     }
 
     companion object {
+        internal const val ACTION_VIEW_SESSION = "com.example.biteflight.voice.action.VIEW_SESSION"
         internal const val ACTION_ANSWER_INCOMING = "com.example.biteflight.voice.action.ANSWER_INCOMING"
         private const val ACTION_DIAL_ORDER = "com.example.biteflight.voice.action.DIAL_ORDER"
-        private const val EXTRA_ADDRESS = "orderPeerAddress"
+        private const val EXTRA_SELLER = "seller"
+        private const val EXTRA_ORDER = "order"
+        private const val EXTRA_RECIPIENT = "recipient"
         private const val EXTRA_NAME = "orderPeerName"
         private const val KEY_PENDING_ACTION = "pendingAction"
         private const val KEY_SESSION_SHOWN = "sessionShown"
-        private const val LISTEN_PORT = 5060
+        private fun currentCallBusy() =
+            VoipManager.currentState != CallState.READY && VoipManager.currentState != CallState.UNAVAILABLE
 
-        fun startOrderCall(context: Context, name: String, addresses: List<String>): Boolean {
-            val interfaces = runCatching {
-                NetworkInterface.getNetworkInterfaces().toList()
-                    .filter { it.isUp && !it.isLoopback }
-                    .flatMap { it.interfaceAddresses }
-                    .filter { it.address is Inet4Address && it.address.isSiteLocalAddress }
-            }.getOrDefault(emptyList())
-            val localAddresses = interfaces.map { it.address }.toSet()
-            val address = addresses.asSequence().mapNotNull(::parseAddress)
-                .filter { it.isSiteLocalAddress && it !in localAddresses }
-                .firstOrNull { remote ->
-                    interfaces.any { local ->
-                        val prefix = local.networkPrefixLength.toInt()
-                        prefix in 1..32 && (ipv4Bits(local.address) xor ipv4Bits(remote)) ushr (32 - prefix) == 0
-                    }
-                } ?: return false
+        fun startOrderCall(context: Context, seller: String, order: String, recipient: String, name: String) {
             context.startActivity(Intent(context, VoiceCallActivity::class.java).apply {
                 action = ACTION_DIAL_ORDER
+                putExtra(EXTRA_SELLER, seller)
+                putExtra(EXTRA_ORDER, order)
+                putExtra(EXTRA_RECIPIENT, recipient)
                 putExtra(EXTRA_NAME, name)
-                putExtra(EXTRA_ADDRESS, address.hostAddress)
             })
-            return true
         }
-
-        private fun parseAddress(value: String): InetAddress? {
-            val parts = value.split('.')
-            val octets = parts.map { it.toIntOrNull() }
-            if (parts.size != 4 || octets.any { it == null || it !in 0..255 }) return null
-            return InetAddress.getByAddress(octets.map { checkNotNull(it).toByte() }.toByteArray())
-        }
-
-        private fun ipv4Bits(address: InetAddress): Int =
-            address.address.fold(0) { value, octet -> (value shl 8) or (octet.toInt() and 255) }
     }
 }

@@ -27,4 +27,14 @@
     <string name="current_order_driver_pending">Calling is available once a driver is assigned.</string>
     <string name="current_order_contact_unavailable">%1$s is unavailable for in-app calls.</string>
     <string name="current_order_item">%1$d × %2$s</string>
+    <string name="seller_current_orders">Current orders</string>
+    <string name="seller_no_current_orders">No current orders</string>
+    <string name="seller_current_orders_loading">Loading current orders…</string>
+    <string name="seller_current_orders_error">Couldn’t load current orders</string>
+    <string name="seller_current_order_id">Order #%1$s</string>
+    <string name="seller_call_buyer">Call buyer</string>
+    <string name="seller_call_rider">Call rider</string>
+    <string name="seller_call_contact_buyer">Buyer</string>
+    <string name="seller_call_contact_rider">Rider</string>
+    <string name="seller_current_order_rider_pending">Calling is available once a rider is assigned.</string>
 </resources>

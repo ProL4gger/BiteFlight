@@ -34,6 +34,10 @@
             android:foregroundServiceType="location"/>
 
         <activity
+            android:name="com.example.biteflight.voice.VoiceCallActivity"
+            android:theme="@style/Theme.BiteFlight.Voice" />
+
+        <activity
             android:name=".RiderDashboardActivity"
             android:exported="false"/>
 

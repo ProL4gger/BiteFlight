@@ -15,15 +15,17 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <androidx.appcompat.widget.AppCompatImageButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/callSessionBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="start"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/voice_minimize"
-            android:src="@drawable/ic_back"
-            android:tint="#FFFFFF" />
+            android:minHeight="48dp"
+            android:text="@string/voice_minimize"
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#473555"
+            app:icon="@drawable/ic_back"
+            app:iconTint="#FFFFFF" />
 
         <Space
             android:layout_width="1dp"

@@ -2,6 +2,7 @@ package com.example.biteflight.utils
 
 import android.content.Context
 import android.util.Log
+import com.example.biteflight.data.model.isCurrentOrder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -12,7 +13,7 @@ import com.google.firebase.database.ValueEventListener
 class SellerOrderAlerts(private val context: Context) {
     private var unsubscribe: (() -> Unit)? = null
 
-    fun start(sellerId: String) {
+    fun start(sellerId: String, onCurrentOrdersChanged: (Boolean) -> Unit) {
         if (unsubscribe != null) return
 
         val auth = FirebaseAuth.getInstance()
@@ -23,6 +24,9 @@ class SellerOrderAlerts(private val context: Context) {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!active || auth.currentUser?.uid != sellerId) return
 
+                onCurrentOrdersChanged(snapshot.children.any {
+                    isCurrentOrder(it.child("status").getValue(String::class.java).orEmpty())
+                })
                 val currentIds = snapshot.children.mapNotNull { it.key }.toSet()
                 // The first snapshot is order history. Alert only for later additions.
                 val newIds = previousIds?.let { currentIds - it }.orEmpty()
@@ -33,7 +37,9 @@ class SellerOrderAlerts(private val context: Context) {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                if (active) Log.w("SellerOrderAlerts", "Could not watch seller orders", error.toException())
+                if (!active) return
+                onCurrentOrdersChanged(false)
+                Log.w("SellerOrderAlerts", "Could not watch seller orders", error.toException())
             }
         }
         orders.addValueEventListener(listener)

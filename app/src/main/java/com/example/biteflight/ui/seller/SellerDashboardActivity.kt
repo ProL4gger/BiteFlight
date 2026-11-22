@@ -19,14 +19,9 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.biteflight.R
 import com.example.biteflight.ui.auth.LoginActivity
 import com.example.biteflight.utils.SellerOrderAlerts
-import com.example.biteflight.voice.OrderCallPresence
-import com.example.biteflight.voice.VoiceCallActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class SellerDashboardActivity : AppCompatActivity() {
-    private var callPresence: OrderCallPresence? = null
-
-
     companion object {
         const val EXTRA_NOTIFICATION_SELLER_ID = "notificationSellerId"
         private const val ASKED_FOR_NOTIFICATIONS = "askedForSellerNotifications"
@@ -62,8 +57,9 @@ class SellerDashboardActivity : AppCompatActivity() {
             ViewCompat.requestApplyInsets(topBarHeader)
         }
 
-        findViewById<View>(R.id.btnVoiceCall).setOnClickListener {
-            startActivity(Intent(this, VoiceCallActivity::class.java))
+        setCurrentOrdersAvailable(false)
+        findViewById<View>(R.id.btnSellerCurrentOrders).setOnClickListener {
+            startActivity(Intent(this, SellerCurrentOrdersActivity::class.java))
         }
 
         val btnEdit = findViewById<ImageButton>(R.id.btnEdit)
@@ -114,24 +110,28 @@ class SellerDashboardActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (callPresence == null && !isFinishing) {
+        if (!isFinishing) {
             FirebaseAuth.getInstance().currentUser?.uid?.let {
-                callPresence = OrderCallPresence(it, OrderCallPresence.RESTAURANT)
+                orderAlerts.start(it, ::setCurrentOrdersAvailable)
             }
         }
-        if (!isFinishing) {
-            FirebaseAuth.getInstance().currentUser?.uid?.let(orderAlerts::start)
-        }
-    }
-
-    override fun onDestroy() {
-        callPresence?.close()
-        super.onDestroy()
     }
 
     override fun onStop() {
         orderAlerts.stop()
+        findViewById<View>(R.id.btnSellerCurrentOrders)?.let { setCurrentOrdersAvailable(false) }
         super.onStop()
+    }
+
+    private fun setCurrentOrdersAvailable(available: Boolean) {
+        findViewById<View>(R.id.btnSellerCurrentOrders).apply {
+            isEnabled = available
+            alpha = if (available) 1f else 0.35f
+            contentDescription = getString(
+                if (available) R.string.seller_current_orders else R.string.seller_no_current_orders
+            )
+            androidx.appcompat.widget.TooltipCompat.setTooltipText(this, contentDescription)
+        }
     }
 
     private fun requestOrderNotificationPermission() {

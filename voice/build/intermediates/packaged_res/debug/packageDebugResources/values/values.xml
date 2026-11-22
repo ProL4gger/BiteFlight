@@ -45,7 +45,7 @@
     <string name="voice_title">Voice call</string>
     <string name="voice_unavailable">Couldn’t start the call. Try again in a moment.</string>
     <string name="voice_unmute">Unmute</string>
-    <style name="Theme.BiteFlight.Voice" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.BiteFlight.Voice" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorSecondary">@color/secondary</item>
         <item name="android:windowBackground">@color/background</item>

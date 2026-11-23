@@ -1,5 +1,6 @@
 package com.example.biteflight
 
+import com.example.biteflight.utils.BuyerOrderMonitor
 import com.example.biteflight.voice.VoiceCallApplication
 import org.osmdroid.config.Configuration
 
@@ -9,5 +10,8 @@ class BiteFlightApp : VoiceCallApplication() {
         val prefs = getSharedPreferences("osm_prefs", MODE_PRIVATE)
         Configuration.getInstance().load(this, prefs)
         Configuration.getInstance().userAgentValue = "BiteFlight/1.0 (Android App; contact@biteflight.app)"
+
+        // Initialize background order status monitor for push notifications
+        BuyerOrderMonitor.init(this)
     }
 }

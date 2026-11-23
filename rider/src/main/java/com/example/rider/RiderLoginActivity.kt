@@ -25,10 +25,16 @@ class RiderLoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_rider_login)
-
         // Initialize Firebase Authentication
         auth = FirebaseAuth.getInstance()
+
+        // Persistent login session check: if already logged in, route immediately
+        if (auth.currentUser != null) {
+            openDashboard()
+            return
+        }
+
+        setContentView(R.layout.activity_rider_login)
 
         // Connect XML views
         etEmail = findViewById(R.id.etEmail)

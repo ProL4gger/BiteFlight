@@ -69,8 +69,31 @@ class RiderDashboardActivity : AppCompatActivity() {
             return
         }
         setContentView(R.layout.activity_rider_dashboard)
-        findViewById<Button>(R.id.btnVoiceCall).setOnClickListener {
-            startActivity(Intent(this, VoiceCallActivity::class.java))
+        findViewById<Button>(R.id.btnCallBuyer).setOnClickListener {
+            val orderId = currentOrderId
+            val sellerId = currentSellerId
+            if (orderId.isNullOrBlank() || sellerId.isNullOrBlank()) {
+                Toast.makeText(this, "No active order assigned", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            FirebaseDatabase.getInstance().getReference("orders").child(sellerId).child(orderId).child("buyerId").get()
+                .addOnSuccessListener { snap ->
+                    val buyerId = snap.getValue(String::class.java)
+                    if (!buyerId.isNullOrBlank()) {
+                        VoiceCallActivity.startOrderCall(this, sellerId, orderId, buyerId, "Customer")
+                    } else {
+                        Toast.makeText(this, "Buyer not found in order", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
+        findViewById<Button>(R.id.btnCallSeller).setOnClickListener {
+            val orderId = currentOrderId
+            val sellerId = currentSellerId
+            if (orderId.isNullOrBlank() || sellerId.isNullOrBlank()) {
+                Toast.makeText(this, "No active order assigned", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            VoiceCallActivity.startOrderCall(this, sellerId, orderId, sellerId, "Restaurant")
         }
         tvStatus = findViewById(R.id.tvStatus)
         tvLocation = findViewById(R.id.tvLocation)

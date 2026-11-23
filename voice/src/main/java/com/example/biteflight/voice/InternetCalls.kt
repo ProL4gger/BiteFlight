@@ -17,6 +17,7 @@ import com.google.firebase.database.Query
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import com.google.android.gms.tasks.Task
 import org.webrtc.IceCandidate
 import org.webrtc.PeerConnection
 
@@ -89,7 +90,9 @@ internal class InternetCalls(
                 return@addOnCompleteListener
             }
             if (!result.isSuccessful) {
-                finishCall("Couldn't start the call", remove = false)
+                val err = result.exception?.localizedMessage ?: "Unknown error"
+                Log.e("InternetCalls", "Firebase call dial failed: $err")
+                finishCall("Couldn't start the call: $err", remove = false)
                 return@addOnCompleteListener
             }
             call.created = true
@@ -126,16 +129,13 @@ internal class InternetCalls(
 
     fun hangUp() {
         val call = session ?: return
-        if (call.outgoing || call.claimed) {
-            finishCall("Call ended")
-            return
+        val wasActive = call.active || call.claimed || call.outgoing
+        if (wasActive) {
+            call.ref.child("state").setValue("ended")
+        } else {
+            call.ref.child("state").setValue("declined")
         }
-
-        // Keep the rejection until the caller observes it, even if this screen closes first.
-        finishCall("Call declined", remove = false)
-        call.ref.child("state").setValue("declined").addOnFailureListener {
-            call.ref.removeValue()
-        }
+        finishCall("Call ended")
     }
 
     fun mute(enabled: Boolean) {
@@ -217,8 +217,8 @@ internal class InternetCalls(
                 return@observe
             }
             val state = snapshot.child("state").getValue(String::class.java)
-            if (state == "declined") {
-                finishCall("Call declined", remove = call.outgoing)
+            if (state == "declined" || state == "ended") {
+                finishCall(if (state == "declined") "Call declined" else "Call ended", remove = !call.outgoing)
                 return@observe
             }
             val accepted = state == "accepted"
@@ -302,13 +302,10 @@ internal class InternetCalls(
                         call.timeout = null
                         report(call, CallState.ACTIVE, "Call in progress")
                     }
-                    PeerConnection.PeerConnectionState.FAILED, PeerConnection.PeerConnectionState.CLOSED ->
-                        finishCall("Couldn't connect the call")
-                    PeerConnection.PeerConnectionState.DISCONNECTED -> {
-                        call.active = false
-                        report(call, CallState.CONNECTING, "Reconnecting...")
-                        timeOut(call)
-                    }
+                    PeerConnection.PeerConnectionState.DISCONNECTED,
+                    PeerConnection.PeerConnectionState.FAILED,
+                    PeerConnection.PeerConnectionState.CLOSED ->
+                        finishCall("Call ended")
                     else -> Unit
                 }
             }, onError = { if (session === call) finishCall("Couldn't connect the call") })

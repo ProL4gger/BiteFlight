@@ -28,13 +28,14 @@ object VoipNotification {
 
         val intent = Intent(context, VoiceCallActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            action = VoiceCallActivity.ACTION_VIEW_SESSION
         }
         val pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_voice_call)
             .setContentTitle("BiteFlight Voice Call")
             .setContentText(message)
@@ -43,9 +44,20 @@ object VoipNotification {
             .setOngoing(active)
             .setAutoCancel(!active)
             .setContentIntent(pendingIntent)
-            .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        if (VoipManager.currentState == CallState.INCOMING) {
+            val answerIntent = Intent(context, VoiceCallActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                action = VoiceCallActivity.ACTION_ANSWER_INCOMING
+            }
+            val answerPendingIntent = PendingIntent.getActivity(
+                context, 1, answerIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.addAction(R.drawable.ic_voice_call, "Answer", answerPendingIntent)
+        }
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
     fun cancelNotification(context: Context) {

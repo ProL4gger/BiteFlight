@@ -1,3 +1,21 @@
 <resources>
     <string name="app_name">rider</string>
+    <string name="rider_app_name">BiteFlight Rider.</string>
+    <string name="rider_ready">Ready to deliver happiness?</string>
+    <string name="rider_call_buyer">Call Buyer</string>
+    <string name="rider_call_seller">Call Seller</string>
+    <string name="rider_availability">Your availability</string>
+    <string name="rider_offline">OFFLINE</string>
+    <string name="rider_online">ONLINE</string>
+    <string name="rider_go_online">Go Online</string>
+    <string name="rider_go_offline">Go Offline</string>
+    <string name="rider_starting">Starting…</string>
+    <string name="rider_current_delivery">Current Delivery</string>
+    <string name="rider_no_orders">No orders assigned yet</string>
+    <string name="rider_loading_delivery">Loading delivery</string>
+    <string name="rider_gps_location">Your GPS location</string>
+    <string name="rider_location_not_available">Location not available</string>
+    <string name="rider_location_share_help">While online, your location is shared even when you switch apps or lock your phone. Tap Go Offline to stop sharing.</string>
+    <string name="rider_refresh_location">Refresh Location</string>
+    <string name="rider_logout">Logout</string>
 </resources>
